@@ -1,5 +1,5 @@
 # Log files
-server.log
+**/server.log
 
 # 过滤所有 __pycache__ 文件夹
 __pycache__/
