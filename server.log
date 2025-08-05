@@ -434,3 +434,526 @@
 2025-08-02 17:54:43,595 - INFO - 📁 静态文件目录: static
 2025-08-02 17:54:43,596 - INFO - 📦 最大上传大小: 1048576 字节
 2025-08-02 17:54:43,596 - INFO - ==================================================
+2025-08-02 17:54:46,138 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-02 17:54:46,138 - INFO - AFC remote call 1 is done.
+2025-08-02 17:54:47,194 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-02 18:04:33,447 - INFO - 🚀 服务器启动成功
+2025-08-02 18:04:33,447 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-02 18:04:33,447 - INFO - 🔧 调试模式: False
+2025-08-02 18:04:33,448 - INFO - 🔐 认证保护: 禁用
+2025-08-02 18:04:33,448 - INFO - 📁 静态文件目录: static
+2025-08-02 18:04:33,448 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-02 18:04:33,448 - INFO - ==================================================
+2025-08-02 18:04:56,023 - INFO - 🚀 服务器启动成功
+2025-08-02 18:04:56,024 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-02 18:04:56,024 - INFO - 🔧 调试模式: False
+2025-08-02 18:04:56,024 - INFO - 🔐 认证保护: 禁用
+2025-08-02 18:04:56,024 - INFO - 📁 静态文件目录: static
+2025-08-02 18:04:56,024 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-02 18:04:56,024 - INFO - ==================================================
+2025-08-04 09:07:05,046 - INFO - 🚀 服务器启动成功
+2025-08-04 09:07:05,046 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 09:07:05,046 - INFO - 🔧 调试模式: False
+2025-08-04 09:07:05,046 - INFO - 🔐 认证保护: 禁用
+2025-08-04 09:07:05,047 - INFO - 📁 静态文件目录: static
+2025-08-04 09:07:05,047 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 09:07:05,047 - INFO - ==================================================
+2025-08-04 09:08:32,629 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 09:08:32,630 - INFO - AFC remote call 1 is done.
+2025-08-04 09:08:33,242 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 10:41:16,793 - INFO - 🚀 服务器启动成功
+2025-08-04 10:41:16,793 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 10:41:16,793 - INFO - 🔧 调试模式: False
+2025-08-04 10:41:16,794 - INFO - 🔐 认证保护: 禁用
+2025-08-04 10:41:16,794 - INFO - 📁 静态文件目录: static
+2025-08-04 10:41:16,794 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 10:41:16,794 - INFO - ==================================================
+2025-08-04 10:46:28,520 - ERROR - Exception in callback _ProactorBasePipeTransport._call_connection_lost()
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost()>
+Traceback (most recent call last):
+  File "D:\Python\3.13.5\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Python\3.13.5\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+2025-08-04 10:47:17,495 - INFO - 🚀 服务器启动成功
+2025-08-04 10:47:17,495 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 10:47:17,495 - INFO - 🔧 调试模式: False
+2025-08-04 10:47:17,495 - INFO - 🔐 认证保护: 禁用
+2025-08-04 10:47:17,496 - INFO - 📁 静态文件目录: static
+2025-08-04 10:47:17,496 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 10:47:17,496 - INFO - ==================================================
+2025-08-04 11:17:13,102 - INFO - 🚀 服务器启动成功
+2025-08-04 11:17:13,102 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 11:17:13,103 - INFO - 🔧 调试模式: False
+2025-08-04 11:17:13,103 - INFO - 🔐 认证保护: 禁用
+2025-08-04 11:17:13,103 - INFO - 📁 静态文件目录: static
+2025-08-04 11:17:13,103 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 11:17:13,103 - INFO - ==================================================
+2025-08-04 11:23:25,250 - INFO - 🚀 服务器启动成功
+2025-08-04 11:23:25,251 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 11:23:25,251 - INFO - 🔧 调试模式: False
+2025-08-04 11:23:25,251 - INFO - 🔐 认证保护: 禁用
+2025-08-04 11:23:25,251 - INFO - 📁 静态文件目录: static
+2025-08-04 11:23:25,252 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 11:23:25,252 - INFO - ==================================================
+2025-08-04 11:28:40,271 - INFO - 🚀 服务器启动成功
+2025-08-04 11:28:40,272 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 11:28:40,272 - INFO - 🔧 调试模式: False
+2025-08-04 11:28:40,272 - INFO - 🔐 认证保护: 禁用
+2025-08-04 11:28:40,272 - INFO - 📁 静态文件目录: static
+2025-08-04 11:28:40,272 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 11:28:40,273 - INFO - ==================================================
+2025-08-04 11:28:41,898 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 11:28:41,898 - INFO - AFC remote call 1 is done.
+2025-08-04 11:28:42,657 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 11:28:56,494 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 11:28:56,494 - INFO - AFC remote call 1 is done.
+2025-08-04 11:28:56,999 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 11:40:48,933 - INFO - 🚀 服务器启动成功
+2025-08-04 11:40:48,933 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 11:40:48,933 - INFO - 🔧 调试模式: False
+2025-08-04 11:40:48,934 - INFO - 🔐 认证保护: 禁用
+2025-08-04 11:40:48,934 - INFO - 📁 静态文件目录: static
+2025-08-04 11:40:48,934 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 11:40:48,934 - INFO - ==================================================
+2025-08-04 11:45:08,873 - INFO - 🚀 服务器启动成功
+2025-08-04 11:45:08,873 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 11:45:08,873 - INFO - 🔧 调试模式: False
+2025-08-04 11:45:08,873 - INFO - 🔐 认证保护: 禁用
+2025-08-04 11:45:08,874 - INFO - 📁 静态文件目录: static
+2025-08-04 11:45:08,874 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 11:45:08,874 - INFO - ==================================================
+2025-08-04 11:45:32,345 - INFO - 🚀 服务器启动成功
+2025-08-04 11:45:32,345 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 11:45:32,346 - INFO - 🔧 调试模式: False
+2025-08-04 11:45:32,346 - INFO - 🔐 认证保护: 禁用
+2025-08-04 11:45:32,346 - INFO - 📁 静态文件目录: static
+2025-08-04 11:45:32,346 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 11:45:32,346 - INFO - ==================================================
+2025-08-04 11:47:09,309 - INFO - 🚀 服务器启动成功
+2025-08-04 11:47:09,309 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 11:47:09,310 - INFO - 🔧 调试模式: False
+2025-08-04 11:47:09,310 - INFO - 🔐 认证保护: 禁用
+2025-08-04 11:47:09,310 - INFO - 📁 静态文件目录: static
+2025-08-04 11:47:09,310 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 11:47:09,310 - INFO - ==================================================
+2025-08-04 11:48:27,325 - INFO - 🚀 服务器启动成功
+2025-08-04 11:48:27,326 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 11:48:27,326 - INFO - 🔧 调试模式: False
+2025-08-04 11:48:27,326 - INFO - 🔐 认证保护: 禁用
+2025-08-04 11:48:27,326 - INFO - 📁 静态文件目录: static
+2025-08-04 11:48:27,327 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 11:48:27,327 - INFO - ==================================================
+2025-08-04 11:49:00,662 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 11:49:00,663 - INFO - AFC remote call 1 is done.
+2025-08-04 11:49:01,262 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 11:49:08,492 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 11:49:08,492 - INFO - AFC remote call 1 is done.
+2025-08-04 11:49:09,189 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 11:49:20,677 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 11:49:20,678 - INFO - AFC remote call 1 is done.
+2025-08-04 11:49:21,739 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 11:50:15,751 - INFO - 🚀 服务器启动成功
+2025-08-04 11:50:15,751 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 11:50:15,751 - INFO - 🔧 调试模式: False
+2025-08-04 11:50:15,752 - INFO - 🔐 认证保护: 禁用
+2025-08-04 11:50:15,752 - INFO - 📁 静态文件目录: static
+2025-08-04 11:50:15,752 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 11:50:15,752 - INFO - ==================================================
+2025-08-04 11:50:33,314 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 11:50:33,315 - INFO - AFC remote call 1 is done.
+2025-08-04 11:50:34,037 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 11:55:02,883 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 11:55:02,883 - INFO - AFC remote call 1 is done.
+2025-08-04 11:55:03,470 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 11:55:23,937 - INFO - 🚀 服务器启动成功
+2025-08-04 11:55:23,937 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 11:55:23,937 - INFO - 🔧 调试模式: False
+2025-08-04 11:55:23,938 - INFO - 🔐 认证保护: 禁用
+2025-08-04 11:55:23,938 - INFO - 📁 静态文件目录: static
+2025-08-04 11:55:23,938 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 11:55:23,938 - INFO - ==================================================
+2025-08-04 11:55:27,630 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 11:55:27,630 - INFO - AFC remote call 1 is done.
+2025-08-04 11:55:28,325 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 11:56:01,144 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 11:56:01,144 - INFO - AFC remote call 1 is done.
+2025-08-04 11:56:01,776 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 11:56:15,005 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 11:56:15,005 - INFO - AFC remote call 1 is done.
+2025-08-04 11:56:15,613 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 11:57:14,826 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 11:57:14,826 - INFO - AFC remote call 1 is done.
+2025-08-04 11:57:15,364 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 12:01:16,582 - INFO - 🚀 服务器启动成功
+2025-08-04 12:01:16,582 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 12:01:16,583 - INFO - 🔧 调试模式: False
+2025-08-04 12:01:16,583 - INFO - 🔐 认证保护: 禁用
+2025-08-04 12:01:16,583 - INFO - 📁 静态文件目录: static
+2025-08-04 12:01:16,583 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 12:01:16,583 - INFO - ==================================================
+2025-08-04 12:01:38,805 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 12:01:38,806 - INFO - AFC remote call 1 is done.
+2025-08-04 12:01:39,512 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 13:58:31,062 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 13:58:31,063 - INFO - AFC remote call 1 is done.
+2025-08-04 13:58:32,541 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 14:00:27,268 - INFO - 🚀 服务器启动成功
+2025-08-04 14:00:27,269 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 14:00:27,269 - INFO - 🔧 调试模式: False
+2025-08-04 14:00:27,269 - INFO - 🔐 认证保护: 禁用
+2025-08-04 14:00:27,270 - INFO - 📁 静态文件目录: static
+2025-08-04 14:00:27,270 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 14:00:27,270 - INFO - ==================================================
+2025-08-04 14:00:30,420 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 14:00:30,420 - INFO - AFC remote call 1 is done.
+2025-08-04 14:00:30,922 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 14:10:39,610 - INFO - 🚀 服务器启动成功
+2025-08-04 14:10:39,610 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 14:10:39,611 - INFO - 🔧 调试模式: False
+2025-08-04 14:10:39,611 - INFO - 🔐 认证保护: 禁用
+2025-08-04 14:10:39,611 - INFO - 📁 静态文件目录: static
+2025-08-04 14:10:39,611 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 14:10:39,612 - INFO - ==================================================
+2025-08-04 14:10:54,474 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 14:10:54,475 - INFO - AFC remote call 1 is done.
+2025-08-04 14:10:55,405 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 14:11:30,543 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 14:11:30,544 - INFO - AFC remote call 1 is done.
+2025-08-04 14:11:31,169 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 14:11:36,289 - INFO - 🚀 服务器启动成功
+2025-08-04 14:11:36,289 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 14:11:36,290 - INFO - 🔧 调试模式: False
+2025-08-04 14:11:36,290 - INFO - 🔐 认证保护: 禁用
+2025-08-04 14:11:36,290 - INFO - 📁 静态文件目录: static
+2025-08-04 14:11:36,290 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 14:11:36,290 - INFO - ==================================================
+2025-08-04 14:11:40,973 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 14:11:40,973 - INFO - AFC remote call 1 is done.
+2025-08-04 14:11:41,651 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 15:00:36,629 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 15:00:36,629 - INFO - AFC remote call 1 is done.
+2025-08-04 15:00:37,413 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 15:01:39,202 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 15:01:39,202 - INFO - AFC remote call 1 is done.
+2025-08-04 15:01:39,914 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 15:02:49,615 - INFO - 🚀 服务器启动成功
+2025-08-04 15:02:49,615 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-04 15:02:49,615 - INFO - 🔧 调试模式: False
+2025-08-04 15:02:49,616 - INFO - 🔐 认证保护: 禁用
+2025-08-04 15:02:49,616 - INFO - 📁 静态文件目录: static
+2025-08-04 15:02:49,617 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-04 15:02:49,617 - INFO - ==================================================
+2025-08-04 15:17:41,553 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 15:17:41,553 - INFO - AFC remote call 1 is done.
+2025-08-04 15:17:42,085 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 15:21:39,275 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 15:21:39,275 - INFO - AFC remote call 1 is done.
+2025-08-04 15:21:39,929 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 15:25:44,889 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 15:25:44,889 - INFO - AFC remote call 1 is done.
+2025-08-04 15:25:45,630 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 16:09:11,082 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 16:09:11,083 - INFO - AFC remote call 1 is done.
+2025-08-04 16:09:11,860 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 16:14:26,958 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 16:14:26,958 - INFO - AFC remote call 1 is done.
+2025-08-04 16:14:27,569 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 16:17:05,985 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 16:17:05,985 - INFO - AFC remote call 1 is done.
+2025-08-04 16:17:06,703 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 16:27:27,436 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 16:27:27,437 - INFO - AFC remote call 1 is done.
+2025-08-04 16:27:28,071 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 16:40:13,972 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 16:40:13,972 - INFO - AFC remote call 1 is done.
+2025-08-04 16:40:14,727 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 16:51:11,261 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 16:51:11,262 - INFO - AFC remote call 1 is done.
+2025-08-04 16:51:11,948 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 16:51:49,870 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 16:51:49,871 - INFO - AFC remote call 1 is done.
+2025-08-04 16:51:50,673 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 17:38:37,002 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 17:38:37,003 - INFO - AFC remote call 1 is done.
+2025-08-04 17:38:37,723 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 18:08:17,568 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 18:08:17,569 - INFO - AFC remote call 1 is done.
+2025-08-04 18:08:18,178 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-04 18:12:41,769 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-04 18:12:41,770 - INFO - AFC remote call 1 is done.
+2025-08-04 18:12:42,564 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 09:36:52,101 - INFO - 🚀 服务器启动成功
+2025-08-05 09:36:52,102 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 09:36:52,102 - INFO - 🔧 调试模式: False
+2025-08-05 09:36:52,103 - INFO - 🔐 认证保护: 禁用
+2025-08-05 09:36:52,103 - INFO - 📁 静态文件目录: static
+2025-08-05 09:36:52,103 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 09:36:52,103 - INFO - ==================================================
+2025-08-05 09:36:59,804 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 09:36:59,805 - INFO - AFC remote call 1 is done.
+2025-08-05 09:37:00,552 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 09:39:42,760 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 09:39:42,760 - INFO - AFC remote call 1 is done.
+2025-08-05 09:39:43,453 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 09:50:04,667 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 09:50:04,668 - INFO - AFC remote call 1 is done.
+2025-08-05 09:50:05,448 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 09:59:00,195 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 09:59:00,195 - INFO - AFC remote call 1 is done.
+2025-08-05 09:59:00,962 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 09:59:10,522 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 09:59:10,523 - INFO - AFC remote call 1 is done.
+2025-08-05 09:59:11,267 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 10:23:35,532 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 10:23:35,532 - INFO - AFC remote call 1 is done.
+2025-08-05 10:23:36,229 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 10:38:24,751 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 10:38:24,752 - INFO - AFC remote call 1 is done.
+2025-08-05 10:38:25,552 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 10:44:56,390 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 10:44:56,390 - INFO - AFC remote call 1 is done.
+2025-08-05 10:44:57,153 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 10:50:29,126 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 10:50:29,126 - INFO - AFC remote call 1 is done.
+2025-08-05 10:50:29,788 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 10:51:48,513 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 10:51:48,513 - INFO - AFC remote call 1 is done.
+2025-08-05 10:51:49,110 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 10:52:17,585 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 10:52:17,586 - INFO - AFC remote call 1 is done.
+2025-08-05 10:52:18,292 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 10:53:53,629 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 10:53:53,629 - INFO - AFC remote call 1 is done.
+2025-08-05 10:53:54,217 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 10:54:01,476 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 10:54:01,476 - INFO - AFC remote call 1 is done.
+2025-08-05 10:54:03,321 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 11:14:05,811 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 11:14:05,811 - INFO - AFC remote call 1 is done.
+2025-08-05 11:14:06,538 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 11:29:33,841 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 11:29:33,841 - INFO - AFC remote call 1 is done.
+2025-08-05 11:29:34,450 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 11:29:41,378 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 11:29:41,378 - INFO - AFC remote call 1 is done.
+2025-08-05 11:29:41,998 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 11:29:48,231 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 11:29:48,231 - INFO - AFC remote call 1 is done.
+2025-08-05 11:29:48,944 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 11:36:00,394 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 11:36:00,395 - INFO - AFC remote call 1 is done.
+2025-08-05 11:36:01,000 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 11:37:36,758 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 11:37:36,758 - INFO - AFC remote call 1 is done.
+2025-08-05 11:37:37,493 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 11:45:02,779 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 11:45:02,779 - INFO - AFC remote call 1 is done.
+2025-08-05 11:45:03,494 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 11:47:52,843 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 11:47:52,844 - INFO - AFC remote call 1 is done.
+2025-08-05 11:47:53,586 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 11:55:41,433 - INFO - 🚀 服务器启动成功
+2025-08-05 11:55:41,434 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 11:55:41,434 - INFO - 🔧 调试模式: False
+2025-08-05 11:55:41,434 - INFO - 🔐 认证保护: 禁用
+2025-08-05 11:55:41,434 - INFO - 📁 静态文件目录: static
+2025-08-05 11:55:41,434 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 11:55:41,434 - INFO - ==================================================
+2025-08-05 11:55:49,938 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 11:55:49,939 - INFO - AFC remote call 1 is done.
+2025-08-05 11:55:50,534 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 11:55:56,802 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 11:55:56,802 - INFO - AFC remote call 1 is done.
+2025-08-05 11:55:57,529 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 11:58:04,171 - INFO - 🚀 服务器启动成功
+2025-08-05 11:58:04,171 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 11:58:04,171 - INFO - 🔧 调试模式: False
+2025-08-05 11:58:04,172 - INFO - 🔐 认证保护: 禁用
+2025-08-05 11:58:04,172 - INFO - 📁 静态文件目录: static
+2025-08-05 11:58:04,172 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 11:58:04,172 - INFO - ==================================================
+2025-08-05 11:58:07,988 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 11:58:07,988 - INFO - AFC remote call 1 is done.
+2025-08-05 11:58:08,706 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 12:01:47,745 - INFO - 🚀 服务器启动成功
+2025-08-05 12:01:47,745 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 12:01:47,745 - INFO - 🔧 调试模式: False
+2025-08-05 12:01:47,745 - INFO - 🔐 认证保护: 禁用
+2025-08-05 12:01:47,746 - INFO - 📁 静态文件目录: static
+2025-08-05 12:01:47,746 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 12:01:47,746 - INFO - ==================================================
+2025-08-05 12:01:56,307 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 12:01:56,308 - INFO - AFC remote call 1 is done.
+2025-08-05 12:01:57,356 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 12:02:01,987 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 12:02:01,988 - INFO - AFC remote call 1 is done.
+2025-08-05 12:02:07,731 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 12:02:58,164 - INFO - 🚀 服务器启动成功
+2025-08-05 12:02:58,164 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 12:02:58,165 - INFO - 🔧 调试模式: False
+2025-08-05 12:02:58,165 - INFO - 🔐 认证保护: 禁用
+2025-08-05 12:02:58,165 - INFO - 📁 静态文件目录: static
+2025-08-05 12:02:58,165 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 12:02:58,165 - INFO - ==================================================
+2025-08-05 13:57:56,758 - INFO - 🚀 服务器启动成功
+2025-08-05 13:57:56,759 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 13:57:56,759 - INFO - 🔧 调试模式: False
+2025-08-05 13:57:56,759 - INFO - 🔐 认证保护: 禁用
+2025-08-05 13:57:56,760 - INFO - 📁 静态文件目录: static
+2025-08-05 13:57:56,760 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 13:57:56,761 - INFO - ==================================================
+2025-08-05 13:58:13,109 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 13:58:13,109 - INFO - AFC remote call 1 is done.
+2025-08-05 13:58:14,724 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 13:58:22,676 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 13:58:22,677 - INFO - AFC remote call 1 is done.
+2025-08-05 13:58:29,099 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 13:58:41,196 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 13:58:41,196 - INFO - AFC remote call 1 is done.
+2025-08-05 13:58:43,064 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 14:52:02,240 - INFO - 🚀 服务器启动成功
+2025-08-05 14:52:02,241 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 14:52:02,241 - INFO - 🔧 调试模式: False
+2025-08-05 14:52:02,241 - INFO - 🔐 认证保护: 禁用
+2025-08-05 14:52:02,241 - INFO - 📁 静态文件目录: static
+2025-08-05 14:52:02,241 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 14:52:02,242 - INFO - ==================================================
+2025-08-05 14:52:31,988 - INFO - 🚀 服务器启动成功
+2025-08-05 14:52:31,988 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 14:52:31,988 - INFO - 🔧 调试模式: False
+2025-08-05 14:52:31,989 - INFO - 🔐 认证保护: 禁用
+2025-08-05 14:52:31,989 - INFO - 📁 静态文件目录: static
+2025-08-05 14:52:31,989 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 14:52:31,989 - INFO - ==================================================
+2025-08-05 14:52:35,130 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 14:52:35,130 - INFO - AFC remote call 1 is done.
+2025-08-05 14:52:35,545 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 400 Bad Request"
+2025-08-05 14:53:21,929 - INFO - 🚀 服务器启动成功
+2025-08-05 14:53:21,930 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 14:53:21,930 - INFO - 🔧 调试模式: False
+2025-08-05 14:53:21,930 - INFO - 🔐 认证保护: 禁用
+2025-08-05 14:53:21,930 - INFO - 📁 静态文件目录: static
+2025-08-05 14:53:21,931 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 14:53:21,931 - INFO - ==================================================
+2025-08-05 15:59:49,708 - INFO - 🚀 服务器启动成功
+2025-08-05 15:59:49,709 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 15:59:49,709 - INFO - 🔧 调试模式: False
+2025-08-05 15:59:49,709 - INFO - 🔐 认证保护: 禁用
+2025-08-05 15:59:49,709 - INFO - 📁 静态文件目录: static
+2025-08-05 15:59:49,710 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 15:59:49,710 - INFO - ==================================================
+2025-08-05 16:00:10,796 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:00:10,797 - INFO - AFC remote call 1 is done.
+2025-08-05 16:00:11,615 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 400 Bad Request"
+2025-08-05 16:02:00,865 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:02:00,865 - INFO - AFC remote call 1 is done.
+2025-08-05 16:02:09,295 - INFO - 🚀 服务器启动成功
+2025-08-05 16:02:09,296 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 16:02:09,296 - INFO - 🔧 调试模式: False
+2025-08-05 16:02:09,296 - INFO - 🔐 认证保护: 禁用
+2025-08-05 16:02:09,296 - INFO - 📁 静态文件目录: static
+2025-08-05 16:02:09,296 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 16:02:09,297 - INFO - ==================================================
+2025-08-05 16:02:13,583 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:02:13,584 - INFO - AFC remote call 1 is done.
+2025-08-05 16:02:14,282 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 16:02:33,203 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:02:33,203 - INFO - AFC remote call 1 is done.
+2025-08-05 16:02:33,892 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 16:02:54,351 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:02:54,352 - INFO - AFC remote call 1 is done.
+2025-08-05 16:02:55,106 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 16:06:32,655 - INFO - 🚀 服务器启动成功
+2025-08-05 16:06:32,655 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 16:06:32,655 - INFO - 🔧 调试模式: False
+2025-08-05 16:06:32,656 - INFO - 🔐 认证保护: 禁用
+2025-08-05 16:06:32,656 - INFO - 📁 静态文件目录: static
+2025-08-05 16:06:32,656 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 16:06:32,656 - INFO - ==================================================
+2025-08-05 16:06:38,087 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:06:38,089 - INFO - AFC remote call 1 is done.
+2025-08-05 16:06:39,069 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 16:29:40,526 - INFO - 🚀 服务器启动成功
+2025-08-05 16:29:40,526 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 16:29:40,526 - INFO - 🔧 调试模式: False
+2025-08-05 16:29:40,527 - INFO - 🔐 认证保护: 禁用
+2025-08-05 16:29:40,527 - INFO - 📁 静态文件目录: static
+2025-08-05 16:29:40,527 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 16:29:40,527 - INFO - ==================================================
+2025-08-05 16:29:49,129 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:29:49,130 - INFO - AFC remote call 1 is done.
+2025-08-05 16:29:54,336 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 16:29:56,275 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:29:56,275 - INFO - AFC remote call 1 is done.
+2025-08-05 16:29:59,800 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 16:30:12,314 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:30:12,321 - INFO - AFC remote call 1 is done.
+2025-08-05 16:30:14,598 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 16:30:32,328 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:30:32,328 - INFO - AFC remote call 1 is done.
+2025-08-05 16:30:34,058 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 200 OK"
+2025-08-05 16:43:56,009 - INFO - 🚀 服务器启动成功
+2025-08-05 16:43:56,009 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 16:43:56,009 - INFO - 🔧 调试模式: False
+2025-08-05 16:43:56,009 - INFO - 🔐 认证保护: 禁用
+2025-08-05 16:43:56,010 - INFO - 📁 静态文件目录: static
+2025-08-05 16:43:56,010 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 16:43:56,010 - INFO - ==================================================
+2025-08-05 16:46:20,225 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:46:20,226 - INFO - AFC remote call 1 is done.
+2025-08-05 16:46:20,728 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 400 Bad Request"
+2025-08-05 16:46:25,726 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:46:25,726 - INFO - AFC remote call 1 is done.
+2025-08-05 16:46:25,984 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 400 Bad Request"
+2025-08-05 16:46:47,387 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:46:47,387 - INFO - AFC remote call 1 is done.
+2025-08-05 16:46:57,787 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:46:57,788 - INFO - AFC remote call 1 is done.
+2025-08-05 16:47:08,556 - INFO - 🚀 服务器启动成功
+2025-08-05 16:47:08,557 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 16:47:08,557 - INFO - 🔧 调试模式: False
+2025-08-05 16:47:08,558 - INFO - 🔐 认证保护: 禁用
+2025-08-05 16:47:08,558 - INFO - 📁 静态文件目录: static
+2025-08-05 16:47:08,558 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 16:47:08,558 - INFO - ==================================================
+2025-08-05 16:47:11,941 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:47:11,941 - INFO - AFC remote call 1 is done.
+2025-08-05 16:52:23,731 - INFO - 🚀 服务器启动成功
+2025-08-05 16:52:23,732 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 16:52:23,732 - INFO - 🔧 调试模式: False
+2025-08-05 16:52:23,732 - INFO - 🔐 认证保护: 禁用
+2025-08-05 16:52:23,732 - INFO - 📁 静态文件目录: static
+2025-08-05 16:52:23,733 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 16:52:23,733 - INFO - ==================================================
+2025-08-05 16:52:45,923 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 16:52:45,924 - INFO - AFC remote call 1 is done.
+2025-08-05 17:04:07,138 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 17:04:07,138 - INFO - AFC remote call 1 is done.
+2025-08-05 17:04:14,831 - INFO - 🚀 服务器启动成功
+2025-08-05 17:04:14,831 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 17:04:14,832 - INFO - 🔧 调试模式: False
+2025-08-05 17:04:14,832 - INFO - 🔐 认证保护: 禁用
+2025-08-05 17:04:14,832 - INFO - 📁 静态文件目录: static
+2025-08-05 17:04:14,832 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 17:04:14,832 - INFO - ==================================================
+2025-08-05 17:04:17,538 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 17:04:17,538 - INFO - AFC remote call 1 is done.
+2025-08-05 17:04:17,923 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 400 Bad Request"
+2025-08-05 17:06:18,147 - INFO - 🚀 服务器启动成功
+2025-08-05 17:06:18,147 - INFO - 📍 地址: http://0.0.0.0:8080
+2025-08-05 17:06:18,147 - INFO - 🔧 调试模式: False
+2025-08-05 17:06:18,147 - INFO - 🔐 认证保护: 禁用
+2025-08-05 17:06:18,148 - INFO - 📁 静态文件目录: static
+2025-08-05 17:06:18,148 - INFO - 📦 最大上传大小: 1048576 字节
+2025-08-05 17:06:18,148 - INFO - ==================================================
+2025-08-05 17:06:20,514 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 17:06:20,514 - INFO - AFC remote call 1 is done.
+2025-08-05 17:08:07,788 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 17:08:07,794 - INFO - AFC remote call 1 is done.
+2025-08-05 17:08:19,983 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse "HTTP/1.1 400 Bad Request"
+2025-08-05 17:14:14,377 - INFO - AFC is enabled with max remote calls: 10.
+2025-08-05 17:14:14,378 - INFO - AFC remote call 1 is done.

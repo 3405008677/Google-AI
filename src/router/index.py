@@ -11,7 +11,7 @@ def helloHome():
 
 # 初始化路由
 def initRouter(app):
-    # 创建通过路由
+    # 创建路由
     app.include_router(router, prefix="/api")
     # 创建 谷歌AI webSocket
     initGoogleAI(app)
