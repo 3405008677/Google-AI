@@ -1,7 +1,62 @@
-# Log files
-**/server.log
+# Environment variables
+.env
+.env.*
+!.env.example
 
-# 过滤所有 __pycache__ 文件夹
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+.vs/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+**/logs/
+**/server.log
+
+# Local development
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Media and static files (uncomment if needed)
+# media/
+# static/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints

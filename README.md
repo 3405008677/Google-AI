@@ -4,23 +4,18 @@
 
 ## 🚀 功能特性
 
-### AI 客户端 (`index.py`)
-- ✅ 安全的 API 密钥管理（环境变量）
-- ✅ 完整的错误处理和异常管理
-- ✅ 支持流式和同步内容生成
-- ✅ 面向对象的设计
-- ✅ 详细的日志记录
-- ✅ 类型提示支持
+### Gemini 模块 (`src/modules/gemini_client.py`)
+- ✅ 集中管理 API Key、模型等配置
+- ✅ 同步与流式输出封装
+- ✅ 统一错误处理与类型提示
+- ✅ 单例客户端，避免重复初始化
 
-### Web 服务器 (`src/sever.py`)
-- ✅ 完整的 HTTP 请求处理
-- ✅ RESTful API 端点
-- ✅ 静态文件服务
-- ✅ 美观的 HTML 界面
-- ✅ 完整的错误处理
-- ✅ 日志记录
-- ✅ 环境变量配置
-- ✅ 安全检查
+### Web 服务器 (`src/server/index.py`)
+- ✅ FastAPI + Uvicorn 一键启动
+- ✅ RESTful / SSE API 端点
+- ✅ 静态文件服务与基础安全检查
+- ✅ 日志 + `.env` 配置管理
+- ✅ 可选 SSL / HTTPS 支援
 
 ## 📦 安装
 
@@ -33,6 +28,8 @@ cd dom_ai
 2. 安装依赖：
 ```bash
 pip install -r requirements.txt
+或者
+python -m pip install -r requirements.txt
 ```
 
 3. 配置环境变量：
@@ -46,48 +43,38 @@ GEMINI_API_KEY=your_actual_api_key_here
 
 ## 🔧 使用方法
 
-### 运行 AI 客户端
+### 启动服务
 
 ```bash
-python index.py
+python -m src.main
 ```
 
-这将启动 Gemini AI 客户端并运行示例测试。
-
-### 运行 Web 服务器
-
-```bash
-python src/sever.py
-```
-
-服务器将在 `http://localhost:8000` 启动。
+服务器会在 `.env` 设置的 `HOST:PORT` 启动（默认 `http://localhost:8000`）。
 
 ## 🌐 API 端点
 
-### GET 端点
-
-- `/` - 首页（美观的 HTML 界面）
-- `/api/health` - 健康检查
-- `/api/info` - 服务器信息
-- `/static/*` - 静态文件服务
-
-### POST 端点
-
-- `/api/echo` - 数据回显（接收 JSON 数据并返回）
+- `/api/home` - 示例回传
+- `/api/google-ai/content` - 同步生成 Gemini 内容（返回 JSON，含请求 ID 与耗时）
+- `/api/google-ai/stream` - 以 `text/event-stream` 方式串流 Gemini 回复（新增 request_id、结束事件）
+- `/static/*` - 静态文件
 
 ## 📁 项目结构
 
 ```
-dom_ai/
-├── index.py              # AI 客户端主文件
+google-ai/
 ├── src/
-│   ├── main.py           # 主模块（空文件）
-│   └── sever.py          # Web 服务器
-├── requirements.txt      # Python 依赖
-├── env.example          # 环境变量示例
-├── README.md            # 项目说明
-└── static/              # 静态文件目录（自动创建）
-    └── test.txt         # 示例静态文件
+│   ├── config.py             # 环境/运行配置
+│   ├── main.py               # 入口，启动 FastAPI
+│   ├── modules/
+│   │   └── gemini_client.py  # Gemini 客户端封装
+│   ├── router/
+│   │   ├── index.py          # 汇总各子路由
+│   │   └── googleAI/         # Gemini API 路由
+│   └── server/
+│       └── index.py          # FastAPI + Uvicorn 服务
+├── env.example               # 环境变量示例
+├── requirements.txt          # 依赖
+└── README.md
 ```
 
 ## 🔒 安全特性
@@ -114,29 +101,28 @@ dom_ai/
 ### Python 代码示例
 
 ```python
-from index import GeminiAI
+from src.modules.gemini_client import get_gemini_client
 
-# 创建 AI 客户端
-ai_client = GeminiAI()
-
-# 生成内容
-response = ai_client.generate_content("解释什么是人工智能")
-print(response)
+client = get_gemini_client()
+print(client.generate_text("解释什么是人工智能"))
 ```
 
 ### API 调用示例
 
 ```bash
-# 健康检查
-curl http://localhost:8000/api/health
-
-# 服务器信息
-curl http://localhost:8000/api/info
-
-# 数据回显
-curl -X POST http://localhost:8000/api/echo \
+# 同步生成（可带系统提示 / 历史对话）
+curl -X POST http://localhost:8000/api/google-ai/content \
   -H "Content-Type: application/json" \
-  -d '{"message": "Hello World"}'
+  -d '{
+        "text":"介绍一下 FastAPI",
+        "system_prompt":"你是一个资深 Python 教练",
+        "history":[{"role":"user","content":"你好"}]
+      }'
+
+# 串流（SSE）
+curl -N -X POST http://localhost:8000/api/google-ai/stream \
+  -H "Content-Type: application/json" \
+  -d '{"text":"给我一首短诗"}'
 ```
 
 ## 🐛 故障排除
@@ -163,6 +149,6 @@ curl -X POST http://localhost:8000/api/echo \
 
 欢迎提交 Issue 和 Pull Request！
 
-## �� 许可证
+## 📄 许可证
 
 MIT License 
