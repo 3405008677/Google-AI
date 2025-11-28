@@ -82,6 +82,10 @@ class BailianClient:
 
         for chunk in completion:
             try:
+                # 检查 chunk 是否有 choices 且不为空
+                if not hasattr(chunk, "choices") or not chunk.choices:
+                    continue
+                
                 # OpenAI 兼容协议下，内容通常在 choices[0].delta.content 或 choices[0].message.content
                 choice = chunk.choices[0]
                 delta = getattr(choice, "delta", None)
@@ -94,7 +98,11 @@ class BailianClient:
 
                 if text:
                     yield text
-            except Exception as exc:  # 单块解析失败不应中断整个流
+            except (IndexError, AttributeError) as exc:
+                # 单块解析失败不应中断整个流，静默跳过异常 chunk
+                logger.debug("跳过无效的流式响应分片: %s", exc)
+                continue
+            except Exception as exc:  # 其他异常记录错误但继续处理
                 logger.error("解析百炼流式响应分片失败: %s", exc)
                 continue
 
