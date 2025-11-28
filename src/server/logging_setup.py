@@ -5,9 +5,14 @@ import sys
 from pathlib import Path
 from typing import Optional, Dict, Any
 
+# 计算项目根目录及默认日志路径
+BASE_DIR = Path(__file__).resolve().parents[2]
+DEFAULT_LOG_DIR = BASE_DIR / "log"
+DEFAULT_LOG_FILE = DEFAULT_LOG_DIR / "server.log"
+
 
 def _configure_logging(
-    log_file: str = "server.log",
+    log_file: str = str(DEFAULT_LOG_FILE),
     log_level: int = logging.INFO,
     log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     log_encoding: str = "utf-8",
@@ -74,7 +79,7 @@ def get_logger(name: Optional[str] = None, **kwargs: Dict[str, Any]) -> logging.
 
 
 # 初始化默认日志配置
-_configure_logging()
+_configure_logging(log_file=str(DEFAULT_LOG_FILE))
 
 # 创建默认日志实例
 logger = get_logger(__name__)
