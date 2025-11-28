@@ -48,7 +48,7 @@ class BailianClient:
                     {"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": prompt},
                 ],
-                stream=False,
+                stream=False,  # 同步返回完整回复
             )
         except Exception as exc:
             logger.error("调用百炼同步接口失败: %s", exc)
@@ -73,7 +73,7 @@ class BailianClient:
                     {"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": prompt},
                 ],
-                stream=True,
+                stream=True,  # 流式返回回复
                 stream_options={"include_usage": True},
             )
         except Exception as exc:
@@ -85,12 +85,12 @@ class BailianClient:
                 # 检查 chunk 是否有 choices 且不为空
                 if not hasattr(chunk, "choices") or not chunk.choices:
                     continue
-                
+
                 # OpenAI 兼容协议下，内容通常在 choices[0].delta.content 或 choices[0].message.content
                 choice = chunk.choices[0]
                 delta = getattr(choice, "delta", None)
                 if delta is not None:
-                    text = (delta.content or "")
+                    text = delta.content or ""
                 else:
                     # 兼容部分实现可能直接放在 message.content
                     message = getattr(choice, "message", None)
