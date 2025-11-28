@@ -12,7 +12,7 @@ from typing import AsyncGenerator, Optional
 
 from fastapi import HTTPException
 
-from ..models.chat_models import ChatRequest, ChatResponse, MessageRole
+from ...common.models.chat_models import ChatRequest, ChatResponse, MessageRole
 
 logger = logging.getLogger(__name__)
 
@@ -86,9 +86,9 @@ class ChatService:
             prompt = self._compose_prompt(request)
             if not prompt.strip():
                 raise ValueError("Empty prompt")
-                
-            # 流式调用 Gemini API
-            async for chunk in self.gemini_client.stream_text(prompt):
+
+            # 流式调用 Gemini API（注意：stream_text 是同步生成器，这里使用普通 for）
+            for chunk in self.gemini_client.stream_text(prompt):
                 yield self._format_sse_event("message", chunk, request_id)
                 
             # 发送结束事件

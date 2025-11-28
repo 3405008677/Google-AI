@@ -13,6 +13,7 @@ from fastapi.responses import StreamingResponse
 from fastapi import APIRouter  # 导入 FastAPI 路由器，用于定义路由端点
 
 from .googleAI.api import initGoogleAI  # 导入 Google AI 路由初始化函数
+from .Bailian.api import initBailian  # 导入阿里云百炼路由初始化函数
 
 # 创建主路由器实例
 # 此路由器用于定义应用程序的主要 API 端点
@@ -33,6 +34,9 @@ def initRouter(app):
 
     # 注册 Google AI 路由
     initGoogleAI(app, prefix="")
+
+    # 注册阿里云百炼路由
+    initBailian(app, prefix="")
 
 
 # 定义模块的公共接口

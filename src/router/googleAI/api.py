@@ -7,10 +7,10 @@ Google AI API 路由
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from .models.chat_models import ChatRequest, ChatResponse
+from ..common.models.chat_models import ChatRequest, ChatResponse
+from ..common.utils.helpers import validate_request
 from .services.chat_service import ChatService
-from .utils.helpers import validate_request
-from src.modules.gemini_client import get_gemini_client
+from .models.gemini_client import get_gemini_client
 
 # 创建 API 路由器
 router = APIRouter(
