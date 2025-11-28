@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # 打印访问地址信息
     protocol = "https" if config.ssl_enabled else "http"
     print(f"\n{'=' * 50}")
-    print(f"🌐 服务访问地址:")
+    print("🌐 服务访问地址:")
     print(f"   本地访问: {protocol}://127.0.0.0:{config.port}")
     if local_ip != "127.0.0.0":
         print(f"   局域网访问: {protocol}://{local_ip}:{config.port}")

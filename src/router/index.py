@@ -12,7 +12,7 @@ from fastapi.responses import StreamingResponse
 
 from fastapi import APIRouter  # 导入 FastAPI 路由器，用于定义路由端点
 
-from .googleAI.index import initGoogleAI  # 导入 Google AI 路由初始化函数
+from .googleAI.api import initGoogleAI  # 导入 Google AI 路由初始化函数
 
 # 创建主路由器实例
 # 此路由器用于定义应用程序的主要 API 端点
@@ -28,7 +28,6 @@ def helloHome():
 
 
 def initRouter(app):
-
     # 注册主路由
     app.include_router(router, prefix="")
 
