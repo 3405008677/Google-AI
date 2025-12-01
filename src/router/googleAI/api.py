@@ -36,6 +36,8 @@ async def chat(
     # 验证请求
     if error := validate_request(request.dict()):
         raise HTTPException(status_code=400, detail=error)
+    if not request.text:
+        raise HTTPException(status_code=400, detail="Field `text` is required.")
 
     try:
         return await chat_service.generate_response(request)
@@ -54,6 +56,8 @@ async def chat_stream(
     # 验证请求
     if error := validate_request(request.dict()):
         raise HTTPException(status_code=400, detail=error)
+    if not request.text:
+        raise HTTPException(status_code=400, detail="Field `text` is required.")
 
     return StreamingResponse(
         chat_service.stream_response(request), media_type="text/event-stream"

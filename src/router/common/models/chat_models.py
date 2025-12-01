@@ -6,7 +6,7 @@
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class MessageRole(str, Enum):
@@ -24,9 +24,29 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     """聊天请求模型"""
-    text: str = Field(..., min_length=1, description="用户输入的提示词")
+
+    text: Optional[str] = Field(None, description="用户输入的提示词")
     system_prompt: Optional[str] = Field(None, description="系统提示，用于设定AI行为")
-    history: List[ChatMessage] = Field(default_factory=list, description="对话历史记录")
+    history: List[ChatMessage] = Field(
+        default_factory=list, description="对话历史记录（旧版字段）"
+    )
+    messages: Optional[List[ChatMessage]] = Field(
+        default=None,
+        description="OpenAI 兼容的消息数组。当存在时将覆盖 text/system/history 拼接逻辑。",
+    )
+
+    @model_validator(mode="after")
+    def _validate_content(self) -> "ChatRequest":
+        if self.text is not None:
+            text = self.text.strip()
+            self.text = text or None
+
+        messages = self.messages or []
+
+        if not messages and not self.text:
+            raise ValueError("Either `text` or `messages` must be provided.")
+
+        return self
 
 
 class ChatResponse(BaseModel):

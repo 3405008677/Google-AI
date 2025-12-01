@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 from functools import lru_cache
-from typing import Iterable
+from typing import Iterable, List, Dict
 
 from openai import OpenAI
 
@@ -22,12 +22,17 @@ class BailianClient:
     - 流式：逐块产出回复内容
     """
 
-    def __init__(self, model: str = "qwen-plus"):
+    def __init__(self, model: str | None = None):
         api_key = os.getenv("DASHSCOPE_API_KEY")
         if not api_key:
             raise BailianClientError("尚未提供 DASHSCOPE_API_KEY，无法调用阿里云百炼接口。")
 
-        self._model = model
+        self._model = model or os.getenv("DASHSCOPE_MODEL")
+        if not self._model:
+            raise BailianClientError(
+                "尚未配置模型名称，请通过构造参数或 DASHSCOPE_MODEL 指定。"
+            )
+        logger.info("Initialising Bailian client with model `%s`", self._model)
         try:
             self._client = OpenAI(
                 api_key=api_key,
@@ -36,18 +41,15 @@ class BailianClient:
         except Exception as exc:  # pragma: no cover - SDK 初始化错误直接冒泡
             raise BailianClientError(f"初始化 Bailian OpenAI 客户端失败: {exc}") from exc
 
-    def generate_text(self, prompt: str) -> str:
+    def generate_text(self, messages: List[Dict[str, str]]) -> str:
         """调用百炼，同步生成整段回复。"""
-        if not prompt.strip():
-            raise ValueError("输入内容不可为空白。")
+        if not messages:
+            raise ValueError("messages 不能为空。")
 
         try:
             completion = self._client.chat.completions.create(
                 model=self._model,
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": prompt},
-                ],
+                messages=messages,
                 stream=False,  # 同步返回完整回复
             )
         except Exception as exc:
@@ -61,18 +63,15 @@ class BailianClient:
             logger.error("解析百炼同步响应失败: %s", exc)
             raise BailianClientError(f"解析百炼同步响应失败: {exc}") from exc
 
-    def stream_text(self, prompt: str) -> Iterable[str]:
+    def stream_text(self, messages: List[Dict[str, str]]) -> Iterable[str]:
         """以生成器形式调用百炼流式输出。"""
-        if not prompt.strip():
-            raise ValueError("输入内容不可为空白。")
+        if not messages:
+            raise ValueError("messages 不能为空。")
 
         try:
             completion = self._client.chat.completions.create(
                 model=self._model,
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": prompt},
-                ],
+                messages=messages,
                 stream=True,  # 流式返回回复
                 stream_options={"include_usage": True},
             )

@@ -5,11 +5,11 @@
 """
 import logging
 import time
-from typing import AsyncGenerator
+from typing import AsyncGenerator, List, Dict
 
 from fastapi import HTTPException
 
-from ...common.models.chat_models import ChatRequest, ChatResponse
+from ...common.models.chat_models import ChatRequest, ChatResponse, MessageRole
 from ..models.bailian_client import get_bailian_client
 
 logger = logging.getLogger(__name__)
@@ -26,13 +26,13 @@ class BailianChatService:
         logger.info("Processing Bailian chat request", extra={"request_id": request_id})
 
         try:
-            prompt = self._compose_prompt(request)
-            if not prompt.strip():
-                raise ValueError("Empty prompt")
+            messages = self._compose_messages(request)
+            if not messages:
+                raise ValueError("Empty messages")
 
             start_time = time.perf_counter()
             # 调用百炼客户端
-            response_text = self.client.generate_text(prompt)
+            response_text = self.client.generate_text(messages)
             latency_ms = int((time.perf_counter() - start_time) * 1000)
 
             return ChatResponse(
@@ -62,12 +62,12 @@ class BailianChatService:
         logger.info("Starting Bailian stream response", extra={"request_id": request_id})
 
         try:
-            prompt = self._compose_prompt(request)
-            if not prompt.strip():
-                raise ValueError("Empty prompt")
+            messages = self._compose_messages(request)
+            if not messages:
+                raise ValueError("Empty messages")
 
-            # 流式调用百炼客户端（注意：stream_text 是同步生成器，这里使用普通 for）
-            for chunk in self.client.stream_text(prompt):
+            # 流式调用百炼客户端（stream_text 返回同步生成器，这里使用普通 for）
+            for chunk in self.client.stream_text(messages):
                 yield self._format_sse_event("message", chunk, request_id)
 
             # 发送结束事件
@@ -80,15 +80,36 @@ class BailianChatService:
             )
             yield self._format_sse_event("error", str(e), request_id)
 
-    def _compose_prompt(self, request: ChatRequest) -> str:
-        segments = []
+    def _compose_messages(self, request: ChatRequest) -> List[Dict[str, str]]:
+        """将对话历史转换为 OpenAI 兼容的 messages 数组，实现多轮对话。"""
+        messages: List[Dict[str, str]] = []
+
+        def _append(role: MessageRole | str, content: str) -> None:
+            content = (content or "").strip()
+            if not content:
+                return
+            role_value = role.value if isinstance(role, MessageRole) else role
+            messages.append({"role": role_value, "content": content})
+
+        if request.messages:
+            for msg in request.messages:
+                _append(msg.role, msg.content)
+            if not messages:
+                raise ValueError("Messages array cannot be empty.")
+            return messages
+
         if request.system_prompt:
-            segments.append(f"[System]\n{request.system_prompt.strip()}")
+            _append("system", request.system_prompt)
+
         for msg in request.history:
-            role = msg.role.value.capitalize()
-            segments.append(f"[{role}]\n{msg.content.strip()}")
-        segments.append(f"[User]\n{request.text.strip()}")
-        return "\n\n".join(segments)
+            _append(msg.role, msg.content)
+
+        _append("user", request.text or "")
+
+        if not messages:
+            raise ValueError("Unable to compose messages from request.")
+
+        return messages
 
     @staticmethod
     def _generate_request_id() -> str:

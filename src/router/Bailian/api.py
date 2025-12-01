@@ -12,7 +12,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
-from ..common.models.chat_models import ChatRequest, ChatResponse
+from ..common.models.chat_models import ChatRequest, ChatResponse, MessageRole
 from ..common.utils.helpers import validate_request
 
 from .services.chat_service import BailianChatService
@@ -87,12 +87,36 @@ def log_request_metadata(
     """记录发起 AI 提问的基础信息"""
     client_ip = http_request.client.host if http_request.client else "unknown"
     relative_path = str(http_request.url.path)
-    question = (chat_request.text or "").strip().replace("\n", " ")
+    question = _extract_latest_question(chat_request).replace("\n", " ")
     log_message = (
         f"endpoint={endpoint} ip={client_ip} path={relative_path} question={question}"
     )
     logger.info(log_message)
     ACCESS_LOGGER.info(log_message)
+
+
+def _extract_latest_question(chat_request: ChatRequest) -> str:
+    if chat_request.text:
+        return chat_request.text.strip()
+
+    def _from_messages(messages):
+        for msg in reversed(messages):
+            role = msg.role if isinstance(msg.role, str) else msg.role.value
+            if role == MessageRole.USER.value:
+                return msg.content.strip()
+        return ""
+
+    if chat_request.messages:
+        question = _from_messages(chat_request.messages)
+        if question:
+            return question
+
+    if chat_request.history:
+        question = _from_messages(chat_request.history)
+        if question:
+            return question
+
+    return ""
 
 
 def _init_access_logger() -> logging.Logger:

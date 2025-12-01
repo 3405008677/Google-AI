@@ -114,7 +114,10 @@ class ChatService:
             segments.append(f"[{role}]\n{msg.content.strip()}")
         
         # 添加当前用户输入
-        segments.append(f"[User]\n{request.text.strip()}")
+        user_text = (request.text or "").strip()
+        if not user_text:
+            raise ValueError("Empty prompt")
+        segments.append(f"[User]\n{user_text}")
         
         return "\n\n".join(segments)
     

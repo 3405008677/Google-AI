@@ -16,11 +16,29 @@ def validate_request(data: Dict[str, Any]) -> Optional[str]:
     Returns:
         Optional[str]: 如果验证失败，返回错误信息字符串；否则返回 None
     """
-    if not data.get('text'):
+    text = data.get("text")
+    messages = data.get("messages")
+
+    if messages:
+        if not isinstance(messages, list):
+            return 'Field "messages" must be a list'
+        for item in messages:
+            if not isinstance(item, dict):
+                return 'Each entry in "messages" must be an object'
+            if "role" not in item or "content" not in item:
+                return 'Each message must contain "role" and "content"'
+            if not isinstance(item["content"], str) or not item["content"].strip():
+                return 'Message "content" must be a non-empty string'
+        return None
+
+    if not text:
         return 'Missing required field: text'
     
-    if not isinstance(data.get('text', ''), str):
+    if not isinstance(text, str):
         return 'Field "text" must be a string'
+
+    if not text.strip():
+        return 'Field "text" cannot be blank'
         
     return None
 
