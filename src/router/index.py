@@ -12,8 +12,11 @@ from fastapi.responses import StreamingResponse
 
 from fastapi import APIRouter  # 导入 FastAPI 路由器，用于定义路由端点
 
-from .googleAI.api import initGoogleAI  # 导入 Google AI 路由初始化函数
-from .Bailian.api import initBailian  # 导入阿里云百炼路由初始化函数
+from .AI.googleAI.api import initGoogleAI  # 导入 Google AI 路由初始化函数
+from .AI.Bailian.api import initBailian  # 导入阿里云百炼路由初始化函数
+from .AI.SelfHosted.api import initSelfHosted  # 导入自建模型路由初始化函数
+from .AI.Tavily.api import initTavily  # 导入 Tavily 搜索路由初始化函数
+from .AI.Orchestrator.api import initOrchestrator  # 导入全能调度系统路由初始化函数
 
 # 创建主路由器实例
 # 此路由器用于定义应用程序的主要 API 端点
@@ -33,10 +36,19 @@ def initRouter(app):
     app.include_router(router, prefix="")
 
     # 注册 Google AI 路由
-    initGoogleAI(app, prefix="")
+    initGoogleAI(app, prefix="/GoogleAI")
 
     # 注册阿里云百炼路由
-    initBailian(app, prefix="")
+    initBailian(app, prefix="/Bailian")
+
+    # 注册自建模型路由
+    initSelfHosted(app, prefix="/SelfHosted")
+
+    # 注册 Tavily 搜索路由
+    initTavily(app, prefix="/Tavily")
+
+    # 注册全能调度系统路由
+    initOrchestrator(app, prefix="/Orchestrator")
 
 
 # 定义模块的公共接口

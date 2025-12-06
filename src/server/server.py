@@ -12,7 +12,6 @@ def initServer():
     logger.info("🚀 服务启动中")
     logger.info("📍 地址: %s://%s:%s", "https" if config.ssl_enabled else "http", config.host, config.port)
     logger.info("🔧 调试模式: %s", config.debug)
-    logger.info("🔐 认证保护: %s", "启用" if config.auth_token else "关闭")
     logger.info("📁 静态资源: %s", config.static_dir)
     logger.info("📦 上传限制: %s bytes", config.max_upload_size)
     logger.info("=" * 50)

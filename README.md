@@ -17,6 +17,12 @@
 - ✅ 日志 + `.env` 配置管理
 - ✅ 可选 SSL / HTTPS 支援
 
+### 自建模型路由 (`src/router/SelfHosted/`)
+- ✅ 使用 OpenAI 兼容协议代理本地/私有模型
+- ✅ 同步与 SSE 流式接口与现有前端保持一致
+- ✅ 独立日志文件，便于排查调用
+- ✅ 可通过环境变量配置 base_url、模型名、密钥
+
 ## 📦 安装
 
 1. 克隆项目：
@@ -56,6 +62,7 @@ python -m src.main
 - `/api/home` - 示例回传
 - `/api/google-ai/content` - 同步生成 Gemini 内容（返回 JSON，含请求 ID 与耗时）
 - `/api/google-ai/stream` - 以 `text/event-stream` 方式串流 Gemini 回复（新增 request_id、结束事件）
+- `/SelfHosted/chat`、`/SelfHosted/chat/stream` - 将请求转发到自建模型（OpenAI 兼容接口）
 - `/static/*` - 静态文件
 
 ## 📁 项目结构
@@ -95,6 +102,16 @@ google-ai/
 | `HOST` | 0.0.0.0 | 服务器主机 |
 | `DEBUG` | False | 调试模式 |
 | `STATIC_DIR` | static | 静态文件目录 |
+| `SELF_MODEL_BASE_URL` | https://ai.pengqianjing.top/v1 | 自建模型的 OpenAI 兼容接口地址 |
+| `SELF_MODEL_NAME` | - | 需要调用的模型名称 |
+| `SELF_MODEL_API_KEY` | - | 若服务需要鉴权则填写，纯内网可留空 |
+
+### 自建模型对接
+
+1. 在 `.env` 中填写 `SELF_MODEL_BASE_URL`、`SELF_MODEL_NAME` 以及可选的 `SELF_MODEL_API_KEY`（若服务不校验密钥可留空）。  
+2. FastAPI 将暴露 `/SelfHosted/chat` 与 `/SelfHosted/chat/stream`，请求体与 Bailian、Gemini 路由保持一致，可直接复用现有前端。  
+3. 自建模型需支持 OpenAI 兼容协议（如 Ollama 的 `POST /v1/chat/completions`）；默认指向 `https://ai.pengqianjing.top/v1`，可按需修改。  
+4. 日志会写入 `log/SelfHosted.log`，便于排查请求内容与响应耗时。
 
 ## 📝 示例用法
 

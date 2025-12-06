@@ -25,9 +25,6 @@ class AppConfig:  # 应用配置类，集中管理所有配置项
     port: int  # 服务器监听的端口号
     debug: bool  # 是否启用调试模式
     static_dir: Path  # 静态文件目录路径
-    gemini_api_key: str  # Gemini AI API 密钥
-    gemini_model: str  # Gemini AI 模型名称
-    auth_token: str | None  # 可选的认证令牌
     max_upload_size: int  # 最大上传文件大小（字节）
     ssl_enabled: bool  # 是否启用 SSL/HTTPS
     ssl_certfile: Path | None  # SSL 证书文件路径（可选）
@@ -51,9 +48,6 @@ def get_config() -> AppConfig:  # 获取应用配置，返回 AppConfig 对象
         port=int(os.getenv("PORT", "8080")),  # 服务器端口，默认 8080
         debug=_as_bool(os.getenv("DEBUG"), default=False),  # 调试模式，默认关闭
         static_dir=static_dir,  # 静态文件目录
-        gemini_api_key=os.getenv("GEMINI_API_KEY", ""),  # Gemini API 密钥，默认空字符串
-        gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),  # Gemini 模型名称，默认 gemini-2.5-flash
-        auth_token=os.getenv("AUTH_TOKEN"),  # 认证令牌，可选
         max_upload_size=int(os.getenv("MAX_UPLOAD_SIZE", str(1024 * 1024))),  # 最大上传大小，默认 1MB
         ssl_enabled=_as_bool(os.getenv("SSL_ENABLED"), default=False),  # SSL 是否启用，默认关闭
         ssl_certfile=Path(cert_path).resolve() if cert_path else None,  # SSL 证书文件路径，如果提供则解析为绝对路径
