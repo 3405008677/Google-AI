@@ -116,16 +116,43 @@ class BaseChatService(ABC):
             # 检查是否是异步生成器
             import inspect
 
-            if inspect.isasyncgen(stream_result):
-                async for chunk in stream_result:
-                    yield format_sse_event("message", chunk, request_id)
-            else:
-                # 同步生成器
-                for chunk in stream_result:
-                    yield format_sse_event("message", chunk, request_id)
+            try:
+                if inspect.isasyncgen(stream_result):
+                    async for chunk in stream_result:
+                        yield format_sse_event("message", chunk, request_id)
+                else:
+                    # 同步生成器
+                    for chunk in stream_result:
+                        yield format_sse_event("message", chunk, request_id)
 
-            # 发送结束事件
-            yield format_sse_event("end", "", request_id)
+                # 发送结束事件
+                yield format_sse_event("end", "", request_id)
+            except (ConnectionError, BrokenPipeError, StopIteration) as e:
+                # 连接中断或正常结束，发送结束事件
+                if isinstance(e, (ConnectionError, BrokenPipeError)):
+                    logger.warning(
+                        f"Stream connection interrupted: {e}. Sending end event.",
+                        extra={"request_id": request_id}
+                    )
+                yield format_sse_event("end", "", request_id)
+            except Exception as stream_exc:
+                # 检查是否是网络连接相关的错误（httpx/httpcore）
+                error_type = type(stream_exc).__name__
+                error_module = type(stream_exc).__module__
+                
+                # 捕获 httpx 和 httpcore 的连接错误
+                if ("RemoteProtocolError" in error_type or 
+                    "Connection" in error_type or 
+                    "httpx" in error_module or 
+                    "httpcore" in error_module):
+                    logger.warning(
+                        f"Stream connection error: {stream_exc}. Sending end event.",
+                        extra={"request_id": request_id}
+                    )
+                    yield format_sse_event("end", "", request_id)
+                else:
+                    # 其他异常重新抛出
+                    raise
         except Exception as e:
             logger.error(
                 f"{self.service_name} stream response failed",

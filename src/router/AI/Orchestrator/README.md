@@ -2,27 +2,36 @@
 
 ## 简介
 
-全能调度系统是一个智能任务分配系统，能够自动判断用户意图，并将任务分配给最合适的服务：
+全能调度系统是一个智能任务分配系统，**已集成到 SelfHosted 服务中**，作为统一入口。
 
-- **聊天 (chat)**: 使用 SelfHosted 模型进行普通对话
-- **搜索 (search)**: 使用 Tavily 进行网络搜索
-- **数据库 (database)**: 查询数据库（开发中）
+所有请求都会：
+1. 自动判断用户意图
+2. 根据意图准备上下文（搜索/数据库）
+3. **统一通过 SelfHosted 模型处理并返回**
+
+- **聊天 (chat)**: 直接使用 SelfHosted 模型
+- **搜索 (search)**: 先调用 Tavily 搜索，然后将结果作为上下文给 SelfHosted 模型处理
+- **数据库 (database)**: 先查询数据库，然后将结果作为上下文给 SelfHosted 模型处理
 
 ## 工作原理
 
 ```
-用户请求
+用户请求 → SelfHosted/chat
     ↓
 意图分类器 (使用 SelfHosted 模型)
     ↓
 判断意图类型
     ↓
-    ├─→ chat → SelfHosted 模型
-    ├─→ search → Tavily 搜索
-    └─→ database → 数据库服务（待实现）
+    ├─→ chat → 直接使用 SelfHosted 模型
+    ├─→ search → Tavily 搜索 → 结果作为上下文 → SelfHosted 模型处理
+    └─→ database → 数据库查询 → 结果作为上下文 → SelfHosted 模型处理
     ↓
-返回结果
+SelfHosted 模型筛选/总结
+    ↓
+返回给前端
 ```
+
+**重要**: 所有结果最终都通过 SelfHosted 模型返回，用户感觉就像在和 AI 对话。
 
 ## API 接口
 

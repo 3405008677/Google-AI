@@ -1,21 +1,24 @@
 """
 全能调度服务
 
-根据用户意图，将任务分配给不同的服务：
-- chat: SelfHosted 模型（普通聊天）
-- search: Tavily 搜索（网络搜索）
-- database: 数据库查询（待实现）
+作为 SelfHosted 的智能调度层，根据用户意图：
+- chat: 直接使用 SelfHosted 模型
+- search: 先调用 Tavily 搜索，然后将搜索结果作为上下文给 SelfHosted 处理
+- database: 先查询数据库，然后将结果给 SelfHosted 处理
+
+所有结果最终都通过 SelfHosted 模型返回给用户。
 """
 import logging
 import time
 from typing import AsyncGenerator
+from copy import deepcopy
 
 from fastapi import HTTPException
 
-from ....common.models.chat_models import ChatRequest, ChatResponse
+from ....common.models.chat_models import ChatRequest, ChatResponse, ChatMessage, MessageRole
 from ....modules.request_utils import generate_request_id, format_sse_event
 from ...SelfHosted.services.chat_service import SelfHostedChatService
-from ...Tavily.services.search_service import TavilySearchService
+from ...Tavily.models.tavily_client import get_tavily_client
 from .intent_classifier import IntentClassifier, IntentType
 
 logger = logging.getLogger(__name__)
@@ -25,16 +28,27 @@ class OrchestratorService:
     """
     全能调度服务
     
-    智能判断用户意图，并将任务分配给合适的服务。
+    作为 SelfHosted 的智能调度层，所有请求最终都通过 SelfHosted 模型返回。
     """
 
     def __init__(self):
         self.service_name = "Orchestrator"
         self.intent_classifier = IntentClassifier()
         self.chat_service = SelfHostedChatService()
-        self.search_service = TavilySearchService()
+        self._tavily_client = None  # 延迟初始化
         # TODO: 初始化数据库服务
         # self.database_service = DatabaseService()
+    
+    @property
+    def tavily_client(self):
+        """延迟初始化 Tavily 客户端"""
+        if self._tavily_client is None:
+            try:
+                self._tavily_client = get_tavily_client()
+            except Exception as e:
+                logger.warning(f"Tavily client initialization failed: {e}. Search functionality will be unavailable.")
+                self._tavily_client = False  # 标记为不可用
+        return self._tavily_client if self._tavily_client is not False else None
 
     async def generate_response(self, request: ChatRequest) -> ChatResponse:
         """
@@ -43,8 +57,11 @@ class OrchestratorService:
         流程：
         1. 提取用户查询
         2. 判断意图
-        3. 根据意图调用相应服务
-        4. 返回结果
+        3. 根据意图准备上下文：
+           - chat: 直接使用原请求
+           - search: 先搜索，将结果作为上下文
+           - database: 先查数据库，将结果作为上下文
+        4. 统一通过 SelfHosted 模型处理并返回
         
         Args:
             request: 聊天请求对象
@@ -74,32 +91,63 @@ class OrchestratorService:
                 extra={"request_id": request_id}
             )
 
-            # 根据意图调用相应服务
+            # 创建请求副本，准备添加上下文
+            enhanced_request = deepcopy(request)
+
+            # 根据意图准备上下文
             if intent == IntentType.SEARCH.value:
-                logger.info("Routing to Tavily search service", extra={"request_id": request_id})
-                response = await self.search_service.generate_response(request)
-                # 在响应中添加意图信息
-                response.text = f"[意图: 网络搜索 | 置信度: {confidence:.2f}]\n\n{response.text}"
+                logger.info("Intent: SEARCH - Fetching search results first", extra={"request_id": request_id})
+                
+                # 检查 Tavily 客户端是否可用
+                tavily = self.tavily_client
+                if tavily is None:
+                    # Tavily 不可用，告知用户
+                    logger.warning("Tavily client not available, falling back to direct chat", extra={"request_id": request_id})
+                    if not enhanced_request.system_prompt:
+                        enhanced_request.system_prompt = "你是一个友好的AI助手，请用自然、友好的方式回答问题。"
+                    enhanced_request.system_prompt += "\n\n注意：网络搜索功能当前不可用（Tavily API 未配置），我将基于已有知识回答。"
+                else:
+                    # 先搜索
+                    search_context = tavily.get_search_context(user_query, max_results=5)
+                    
+                    # 将搜索结果作为系统提示或上下文
+                    search_prompt = f"""用户的问题需要从网络搜索获取最新信息。我已经为你搜索了相关信息：
+
+{search_context}
+
+请根据以上搜索结果，回答用户的问题。如果搜索结果中没有相关信息，请如实告知用户。"""
+                    
+                    # 更新请求，将搜索结果作为上下文
+                    if enhanced_request.system_prompt:
+                        enhanced_request.system_prompt = f"{enhanced_request.system_prompt}\n\n{search_prompt}"
+                    else:
+                        enhanced_request.system_prompt = search_prompt
                 
             elif intent == IntentType.DATABASE.value:
-                logger.info("Routing to database service", extra={"request_id": request_id})
-                # TODO: 实现数据库查询服务
-                response = ChatResponse(
-                    request_id=request_id,
-                    text=f"[意图: 数据库查询 | 置信度: {confidence:.2f}]\n\n数据库查询功能正在开发中...",
-                    latency_ms=0,
-                )
+                logger.info("Intent: DATABASE - Querying database first", extra={"request_id": request_id})
+                # TODO: 实现数据库查询
+                db_result = "数据库查询功能正在开发中..."
                 
+                db_prompt = f"""用户的问题需要查询数据库。查询结果：
+
+{db_result}
+
+请根据以上查询结果，回答用户的问题。"""
+                
+                if enhanced_request.system_prompt:
+                    enhanced_request.system_prompt = f"{enhanced_request.system_prompt}\n\n{db_prompt}"
+                else:
+                    enhanced_request.system_prompt = db_prompt
+                    
             else:  # CHAT
-                logger.info("Routing to SelfHosted chat service", extra={"request_id": request_id})
-                # 为聊天服务添加上下文，说明这是普通对话
-                # 创建请求副本，避免修改原始请求
-                from copy import deepcopy
-                chat_request = deepcopy(request)
-                if not chat_request.system_prompt:
-                    chat_request.system_prompt = "你是一个友好的AI助手，请用自然、友好的方式回答问题。"
-                
-                response = await self.chat_service.generate_response(chat_request)
+                logger.info("Intent: CHAT - Direct chat", extra={"request_id": request_id})
+                # 普通聊天，使用默认系统提示
+                if not enhanced_request.system_prompt:
+                    enhanced_request.system_prompt = "你是一个友好的AI助手，请用自然、友好的方式回答问题。"
+
+            # 统一通过 SelfHosted 模型处理
+            logger.info("Processing with SelfHosted model", extra={"request_id": request_id})
+            response = await self.chat_service.generate_response(enhanced_request)
 
             latency_ms = int((time.perf_counter() - start_time) * 1000)
             response.latency_ms = latency_ms
@@ -117,6 +165,8 @@ class OrchestratorService:
     async def stream_response(self, request: ChatRequest) -> AsyncGenerator[str, None]:
         """
         流式生成响应
+        
+        流程同 generate_response，但以流式方式返回。
         
         Args:
             request: 聊天请求对象
@@ -143,32 +193,62 @@ class OrchestratorService:
                 extra={"request_id": request_id}
             )
 
-            # 发送意图信息
-            intent_info = f"[意图: {intent} | 置信度: {confidence:.2f}]\n\n"
-            yield format_sse_event("message", intent_info, request_id)
+            # 创建请求副本
+            enhanced_request = deepcopy(request)
 
-            # 根据意图调用相应服务
+            # 根据意图准备上下文
             if intent == IntentType.SEARCH.value:
-                logger.info("Streaming from Tavily search service", extra={"request_id": request_id})
-                async for chunk in self.search_service.stream_response(request):
-                    yield chunk
+                logger.info("Intent: SEARCH - Fetching search results first", extra={"request_id": request_id})
+                
+                # 检查 Tavily 客户端是否可用
+                tavily = self.tavily_client
+                if tavily is None:
+                    # Tavily 不可用，告知用户
+                    logger.warning("Tavily client not available, falling back to direct chat", extra={"request_id": request_id})
+                    if not enhanced_request.system_prompt:
+                        enhanced_request.system_prompt = "你是一个友好的AI助手，请用自然、友好的方式回答问题。"
+                    enhanced_request.system_prompt += "\n\n注意：网络搜索功能当前不可用（Tavily API 未配置），我将基于已有知识回答。"
+                else:
+                    # 先搜索
+                    search_context = tavily.get_search_context(user_query, max_results=5)
+                    
+                    # 将搜索结果作为上下文
+                    search_prompt = f"""用户的问题需要从网络搜索获取最新信息。我已经为你搜索了相关信息：
+
+{search_context}
+
+请根据以上搜索结果，回答用户的问题。如果搜索结果中没有相关信息，请如实告知用户。"""
+                    
+                    if enhanced_request.system_prompt:
+                        enhanced_request.system_prompt = f"{enhanced_request.system_prompt}\n\n{search_prompt}"
+                    else:
+                        enhanced_request.system_prompt = search_prompt
                     
             elif intent == IntentType.DATABASE.value:
-                logger.info("Streaming from database service", extra={"request_id": request_id})
-                # TODO: 实现数据库查询流式返回
-                yield format_sse_event("message", "数据库查询功能正在开发中...", request_id)
-                yield format_sse_event("end", "", request_id)
+                logger.info("Intent: DATABASE - Querying database first", extra={"request_id": request_id})
+                # TODO: 实现数据库查询
+                db_result = "数据库查询功能正在开发中..."
                 
+                db_prompt = f"""用户的问题需要查询数据库。查询结果：
+
+{db_result}
+
+请根据以上查询结果，回答用户的问题。"""
+                
+                if enhanced_request.system_prompt:
+                    enhanced_request.system_prompt = f"{enhanced_request.system_prompt}\n\n{db_prompt}"
+                else:
+                    enhanced_request.system_prompt = db_prompt
+                    
             else:  # CHAT
-                logger.info("Streaming from SelfHosted chat service", extra={"request_id": request_id})
-                # 为聊天服务添加上下文
-                from copy import deepcopy
-                chat_request = deepcopy(request)
-                if not chat_request.system_prompt:
-                    chat_request.system_prompt = "你是一个友好的AI助手，请用自然、友好的方式回答问题。"
-                
-                async for chunk in self.chat_service.stream_response(chat_request):
-                    yield chunk
+                logger.info("Intent: CHAT - Direct chat", extra={"request_id": request_id})
+                if not enhanced_request.system_prompt:
+                    enhanced_request.system_prompt = "你是一个友好的AI助手，请用自然、友好的方式回答问题。"
+
+            # 统一通过 SelfHosted 模型流式处理
+            logger.info("Streaming with SelfHosted model", extra={"request_id": request_id})
+            async for chunk in self.chat_service.stream_response(enhanced_request):
+                yield chunk
 
         except Exception as e:
             logger.error(
@@ -205,4 +285,3 @@ class OrchestratorService:
                     return msg.content.strip()
         
         return ""
-

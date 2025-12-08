@@ -80,27 +80,36 @@ class SelfHostedClient:
             logger.error("调用自建模型流式接口失败: %s", exc)
             raise SelfHostedClientError(f"调用自建模型流式接口失败: {exc}") from exc
 
-        for chunk in completion:
-            try:
-                if not hasattr(chunk, "choices") or not chunk.choices:
+        try:
+            for chunk in completion:
+                try:
+                    if not hasattr(chunk, "choices") or not chunk.choices:
+                        continue
+
+                    choice = chunk.choices[0]
+                    delta = getattr(choice, "delta", None)
+                    if delta is not None:
+                        text = delta.content or ""
+                    else:
+                        message = getattr(choice, "message", None)
+                        text = getattr(message, "content", "") if message else ""
+
+                    if text:
+                        yield text
+                except (IndexError, AttributeError) as exc:
+                    logger.debug("跳过无效的流式响应分片: %s", exc)
                     continue
-
-                choice = chunk.choices[0]
-                delta = getattr(choice, "delta", None)
-                if delta is not None:
-                    text = delta.content or ""
-                else:
-                    message = getattr(choice, "message", None)
-                    text = getattr(message, "content", "") if message else ""
-
-                if text:
-                    yield text
-            except (IndexError, AttributeError) as exc:
-                logger.debug("跳过无效的流式响应分片: %s", exc)
-                continue
-            except Exception as exc:
-                logger.error("解析自建模型流式响应分片失败: %s", exc)
-                continue
+                except Exception as exc:
+                    logger.error("解析自建模型流式响应分片失败: %s", exc)
+                    continue
+        except (ConnectionError, BrokenPipeError) as exc:
+            # 连接中断，记录警告但允许继续（可能已经收到部分数据）
+            logger.warning("流式连接中断，可能已收到部分数据: %s", exc)
+            # 不重新抛出异常，让调用者处理已收到的数据
+        except Exception as exc:
+            # 其他异常重新抛出
+            logger.error("流式响应过程中发生错误: %s", exc)
+            raise
 
 
 @lru_cache(maxsize=1)
