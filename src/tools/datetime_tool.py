@@ -1,0 +1,219 @@
+"""
+時間日期工具模組
+
+提供獲取當前日期和時間的功能，用於 Agent Function Calling。
+
+使用方式：
+    from src.tools.datetime_tool import get_current_datetime, DateTimeTool
+    
+    # 方式 1：直接調用
+    result = get_current_datetime()
+    
+    # 方式 2：獲取工具實例（用於 LangChain）
+    tool = DateTimeTool()
+    result = tool.invoke({})
+"""
+
+from datetime import datetime
+from typing import Optional, Dict, Any, Union
+from dataclasses import dataclass
+
+from src.server.logging_setup import logger
+
+
+@dataclass
+class DateTimeResponse:
+    """時間日期響應"""
+    date: str           # 2024年12月11日
+    time: str           # 14:30:25
+    weekday: str        # 星期四
+    timezone: str       # Asia/Shanghai
+    timestamp: float    # Unix 時間戳
+    iso_format: str     # ISO 8601 格式
+    
+    def to_text(self) -> str:
+        """轉換為文本格式"""
+        return (
+            f"📅 當前時間信息：\n"
+            f"- 日期：{self.date}\n"
+            f"- 星期：{self.weekday}\n"
+            f"- 時間：{self.time}\n"
+            f"- 時區：{self.timezone}\n"
+            f"- ISO 格式：{self.iso_format}"
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """轉換為字典"""
+        return {
+            "date": self.date,
+            "time": self.time,
+            "weekday": self.weekday,
+            "timezone": self.timezone,
+            "timestamp": self.timestamp,
+            "iso_format": self.iso_format,
+        }
+
+
+# 星期對照表
+WEEKDAY_NAMES = {
+    0: "星期一",
+    1: "星期二",
+    2: "星期三",
+    3: "星期四",
+    4: "星期五",
+    5: "星期六",
+    6: "星期日",
+}
+
+
+class DateTimeTool:
+    """
+    時間日期工具
+    
+    提供獲取當前日期和時間的功能。
+    支持 LangChain 工具調用格式。
+    """
+    
+    def __init__(self, timezone: str = "Asia/Shanghai"):
+        """
+        初始化時間日期工具
+        
+        Args:
+            timezone: 默認時區
+        """
+        self.default_timezone = timezone
+    
+    def get_datetime(self, timezone: Optional[str] = None) -> DateTimeResponse:
+        """
+        獲取當前日期和時間
+        
+        Args:
+            timezone: 時區（如 "Asia/Shanghai", "UTC"）
+            
+        Returns:
+            DateTimeResponse 時間響應
+        """
+        tz_name = timezone or self.default_timezone
+        
+        try:
+            # Python 3.9+ 使用 zoneinfo
+            from zoneinfo import ZoneInfo
+            tz = ZoneInfo(tz_name)
+            now = datetime.now(tz)
+        except ImportError:
+            # 降級方案：使用本地時間
+            logger.warning("zoneinfo 不可用，使用本地時間")
+            now = datetime.now()
+            tz_name = "Local"
+        except Exception as e:
+            logger.warning(f"無法解析時區 {tz_name}: {e}，使用本地時間")
+            now = datetime.now()
+            tz_name = "Local"
+        
+        logger.info(f"🕐 [DateTimeTool] 獲取當前時間: {now.isoformat()}")
+        
+        return DateTimeResponse(
+            date=now.strftime("%Y年%m月%d日"),
+            time=now.strftime("%H:%M:%S"),
+            weekday=WEEKDAY_NAMES.get(now.weekday(), now.strftime("%A")),
+            timezone=tz_name,
+            timestamp=now.timestamp(),
+            iso_format=now.isoformat(),
+        )
+    
+    # LangChain 兼容接口
+    def invoke(self, input_data: Union[str, Dict[str, Any], None] = None) -> str:
+        """
+        LangChain 同步調用接口
+        
+        Args:
+            input_data: 輸入參數（可選）
+            
+        Returns:
+            時間信息文本
+        """
+        timezone = None
+        if isinstance(input_data, dict):
+            timezone = input_data.get("timezone")
+        
+        response = self.get_datetime(timezone)
+        return response.to_text()
+    
+    async def ainvoke(self, input_data: Union[str, Dict[str, Any], None] = None) -> str:
+        """
+        LangChain 異步調用接口
+        
+        Args:
+            input_data: 輸入參數（可選）
+            
+        Returns:
+            時間信息文本
+        """
+        # 獲取時間是同步操作，無需異步
+        return self.invoke(input_data)
+    
+    def __repr__(self) -> str:
+        return f"DateTimeTool(timezone={self.default_timezone})"
+
+
+# === 全局實例和便捷函數 ===
+
+_datetime_instance: Optional[DateTimeTool] = None
+
+
+def get_datetime_tool(timezone: str = "Asia/Shanghai") -> DateTimeTool:
+    """
+    獲取時間日期工具實例
+    
+    Args:
+        timezone: 默認時區
+        
+    Returns:
+        DateTimeTool 實例
+    """
+    global _datetime_instance
+    
+    if _datetime_instance is None:
+        _datetime_instance = DateTimeTool(timezone=timezone)
+    
+    return _datetime_instance
+
+
+def get_current_datetime(timezone: str = "Asia/Shanghai") -> str:
+    """
+    獲取當前日期和時間（便捷函數）
+    
+    Args:
+        timezone: 時區
+        
+    Returns:
+        格式化的時間信息文本
+        
+    Examples:
+        result = get_current_datetime()
+        print(result)
+        # 📅 當前時間信息：
+        # - 日期：2024年12月11日
+        # - 星期：星期四
+        # - 時間：14:30:25
+        # - 時區：Asia/Shanghai
+        # - ISO 格式：2024-12-11T14:30:25+08:00
+    """
+    tool = DateTimeTool(timezone=timezone)
+    return tool.invoke(None)
+
+
+def get_current_datetime_simple(timezone: str = "Asia/Shanghai") -> str:
+    """
+    獲取簡單的日期時間字符串
+    
+    Args:
+        timezone: 時區
+        
+    Returns:
+        簡單格式：2024年12月11日 星期四 14:30
+    """
+    tool = DateTimeTool(timezone=timezone)
+    response = tool.get_datetime(timezone)
+    return f"{response.date} {response.weekday} {response.time[:5]}"
+

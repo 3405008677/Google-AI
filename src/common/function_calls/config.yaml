@@ -1,0 +1,219 @@
+# ============================================================
+# Function Call / Tools 配置文件
+# ============================================================
+# 
+# 統一管理所有工具定義（Function Calling Schema）
+# 格式遵循 OpenAI/Gemini 的 function schema
+#
+# 使用方式：
+#   from src.common.function_calls import get_tool, get_tools
+#   
+#   # 獲取單個工具定義
+#   tool = get_tool("get_current_datetime")
+#   
+#   # 獲取多個工具
+#   tools = get_tools(["web_search", "calculator"])
+#
+# ============================================================
+
+tools:
+  # === 時間日期工具 ===
+  get_current_datetime:
+    name: "get_current_datetime"
+    description: |
+      獲取當前的日期和時間信息。
+      當用戶詢問今天是幾號、現在幾點、今天星期幾等時間相關問題時，
+      必須調用此工具獲取準確的時間信息。
+    parameters:
+      type: "object"
+      properties:
+        timezone:
+          type: "string"
+          description: "時區，如 'Asia/Shanghai', 'Asia/Taipei', 'UTC'"
+          default: "Asia/Shanghai"
+      required: []
+    implementation:
+      module: "src.tools.datetime_tool"
+      class: "DateTimeTool"
+
+  # === Tavily 搜索工具 ===
+  tavily_search:
+    name: "tavily_search"
+    description: |
+      使用 Tavily API 進行聯網搜索，獲取最新的網路信息、新聞、事實等。
+      適用於需要獲取實時信息或最新數據的場景。
+    parameters:
+      type: "object"
+      properties:
+        query:
+          type: "string"
+          description: "搜索查詢關鍵詞"
+        max_results:
+          type: "integer"
+          description: "最大返回結果數量（1-20）"
+          default: 5
+        search_depth:
+          type: "string"
+          description: "搜索深度：basic（快速）或 advanced（深度）"
+          enum: ["basic", "advanced"]
+          default: "basic"
+        include_answer:
+          type: "boolean"
+          description: "是否包含 AI 摘要"
+          default: true
+      required:
+        - query
+    implementation:
+      module: "src.tools.search"
+      class: "TavilySearchTool"
+
+  # === 通用搜索工具（別名）===
+  web_search:
+    name: "web_search"
+    description: "在互聯網上搜索最新信息、新聞、事實等"
+    parameters:
+      type: "object"
+      properties:
+        query:
+          type: "string"
+          description: "搜索查詢關鍵詞"
+        max_results:
+          type: "integer"
+          description: "最大返回結果數量"
+          default: 5
+      required:
+        - query
+
+  # === 數據分析工具 ===
+  sql_query:
+    name: "sql_query"
+    description: "執行 SQL 查詢以獲取數據庫中的數據"
+    parameters:
+      type: "object"
+      properties:
+        query:
+          type: "string"
+          description: "SQL 查詢語句"
+        database:
+          type: "string"
+          description: "目標數據庫名稱"
+          default: "default"
+      required:
+        - query
+
+  # === 計算工具 ===
+  calculator:
+    name: "calculator"
+    description: "執行數學計算，支持基本運算和科學計算"
+    parameters:
+      type: "object"
+      properties:
+        expression:
+          type: "string"
+          description: "數學表達式，如 '2 + 2' 或 'sqrt(16)'"
+      required:
+        - expression
+
+  # === 天氣查詢工具 ===
+  get_weather:
+    name: "get_weather"
+    description: "獲取指定城市的天氣信息"
+    parameters:
+      type: "object"
+      properties:
+        city:
+          type: "string"
+          description: "城市名稱，如 '台北' 或 'Tokyo'"
+        unit:
+          type: "string"
+          description: "溫度單位"
+          enum: ["celsius", "fahrenheit"]
+          default: "celsius"
+      required:
+        - city
+
+  # === 文件操作工具 ===
+  read_file:
+    name: "read_file"
+    description: "讀取指定路徑的文件內容"
+    parameters:
+      type: "object"
+      properties:
+        file_path:
+          type: "string"
+          description: "文件路徑"
+        encoding:
+          type: "string"
+          description: "文件編碼"
+          default: "utf-8"
+      required:
+        - file_path
+
+  write_file:
+    name: "write_file"
+    description: "將內容寫入指定文件"
+    parameters:
+      type: "object"
+      properties:
+        file_path:
+          type: "string"
+          description: "文件路徑"
+        content:
+          type: "string"
+          description: "要寫入的內容"
+        mode:
+          type: "string"
+          description: "寫入模式"
+          enum: ["overwrite", "append"]
+          default: "overwrite"
+      required:
+        - file_path
+        - content
+
+  # === API 調用工具 ===
+  http_request:
+    name: "http_request"
+    description: "發送 HTTP 請求調用外部 API"
+    parameters:
+      type: "object"
+      properties:
+        url:
+          type: "string"
+          description: "API URL"
+        method:
+          type: "string"
+          description: "HTTP 方法"
+          enum: ["GET", "POST", "PUT", "DELETE"]
+          default: "GET"
+        headers:
+          type: "object"
+          description: "請求頭"
+        body:
+          type: "object"
+          description: "請求體（用於 POST/PUT）"
+      required:
+        - url
+
+
+# ============================================================
+# Worker 工具配置
+# ============================================================
+# 定義每個 Worker 可使用的工具列表
+# 
+worker_tools:
+  Researcher:
+    - tavily_search
+    - web_search
+    - http_request
+  
+  DataAnalyst:
+    - sql_query
+    - calculator
+  
+  Writer: []  # Writer 不需要工具
+  
+  General:
+    - get_current_datetime
+    - calculator
+    - get_weather
+

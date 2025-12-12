@@ -1,4 +1,4 @@
-"""封裝 SSL 相關檢查，維持啟動程式邏輯簡潔。"""
+"""封装 SSL 相关检查，维持启动程序逻辑简洁。"""
 
 from typing import Dict
 
@@ -14,7 +14,7 @@ def build_ssl_kwargs(config) -> Dict[str, str]:
     keyfile = config.ssl_keyfile
 
     if not (certfile and keyfile):
-        logger.warning("已启用 SSL，但缺少证书路径设定，将以 HTTP 启动。")
+        logger.warning("已启用 SSL，但缺少证书路径设置，将以 HTTP 启动。")
         return {}
 
     if not (certfile.exists() and keyfile.exists()):
@@ -22,4 +22,3 @@ def build_ssl_kwargs(config) -> Dict[str, str]:
         return {}
 
     return {"ssl_certfile": str(certfile), "ssl_keyfile": str(keyfile)}
-
