@@ -6,11 +6,11 @@ Supervisor 节点负责：
 2. 决策路由：决定下一步应该由哪个 Worker 执行
 3. 进度追踪：监控任务执行进度，决定是否结束
 
-動態模型選擇：
-Supervisor 會根據 user_context 自動選擇對應的 AI 模型：
+动态模型选择：
+Supervisor 会根据 user_context 自动选择对应的 AI 模型：
 - Customize 路由 → 使用 SELF_MODEL_* 配置
 - Qwen 路由 → 使用 QWEN_* 配置
-- 預設 → 按順序嘗試可用的模型
+- 预设 → 按顺序尝试可用的模型
 """
 
 from dataclasses import dataclass, field
@@ -73,12 +73,12 @@ class RouteDecision(BaseModel):
 @dataclass
 class SupervisorConfig:
     """
-    Supervisor 配置類
+    Supervisor 配置类
     
-    注意：模型選擇已改為動態方式，從 user_context 中讀取。
-    這裡只保留 Supervisor 行為相關的配置。
+    注意：模型选择已改为动态方式，从 user_context 中读取。
+    这里只保留 Supervisor 行为相关的配置。
     """
-    temperature: float = 0.0  # Supervisor 使用低溫度以確保決策穩定
+    temperature: float = 0.0  # Supervisor 使用低温度以确保决策稳定
     max_iterations: int = MAX_ITERATIONS
     max_task_steps: int = MAX_TASK_STEPS
     enable_planning: bool = True  # 是否启用任务规划
@@ -88,23 +88,23 @@ class SupervisorConfig:
         pass
 
 
-# 提示詞現在從配置文件讀取：src/common/prompts/config.yaml
-# 使用 get_prompt("supervisor.planning") 和 get_prompt("supervisor.routing") 獲取
+# 提示词现在从配置文件读取：src/common/prompts/config.yaml
+# 使用 get_prompt("supervisor.planning") 和 get_prompt("supervisor.routing") 获取
 
 
 def _build_planning_prompt(worker_list: str, max_steps: int) -> ChatPromptTemplate:
-    """构建任务规划 Prompt（從配置文件讀取）"""
-    # 從配置文件獲取提示詞，支持模板變量
+    """构建任务规划 Prompt（从配置文件读取）"""
+    # 从配置文件获取提示词，支持模板变量
     system_prompt = get_prompt(
         "supervisor.planning",
         worker_list=worker_list,
         max_steps=max_steps,
     )
     
-    # 獲取規劃完成提示詞
+    # 获取规划完成提示词
     planning_complete = get_prompt(
         "supervisor.planning_complete",
-        default='請分析用戶的請求，制定一個執行計劃。返回 JSON 格式：{{"steps": [{{"worker": "專家名稱", "description": "任務描述"}}], "reasoning": "規劃理由"}}'
+        default='请分析用户的请求，制定一个执行计划。返回 JSON 格式：{{"steps": [{{"worker": "专家名称", "description": "任务描述"}}], "reasoning": "规划理由"}}'
     )
     
     return ChatPromptTemplate.from_messages([
@@ -121,8 +121,8 @@ def _build_routing_prompt(
     completed_steps: int,
     total_steps: int,
 ) -> ChatPromptTemplate:
-    """构建路由决策 Prompt（從配置文件讀取）"""
-    # 從配置文件獲取提示詞，支持模板變量
+    """构建路由决策 Prompt（从配置文件读取）"""
+    # 从配置文件获取提示词，支持模板变量
     system_prompt = get_prompt(
         "supervisor.routing",
         worker_list=worker_list,
@@ -132,10 +132,10 @@ def _build_routing_prompt(
         total_steps=total_steps,
     )
     
-    # 獲取路由決策提示詞
+    # 获取路由决策提示词
     routing_decision = get_prompt(
         "supervisor.routing_decision",
-        default="根據以上對話歷史和任務進度，請做出你的決策：下一步交給哪個專家？或者任務是否已經完成？"
+        default="根据以上对话历史和任务进度，请做出你的决策：下一步交给哪个专家？或者任务是否已经完成？"
     )
     
     return ChatPromptTemplate.from_messages([
@@ -147,10 +147,10 @@ def _build_routing_prompt(
 
 def _get_llm_from_state(state: SupervisorState, temperature: float = 0.0) -> BaseChatModel:
     """
-    從狀態中獲取 LLM 實例
+    从状态中获取 LLM 实例
     
-    根據 user_context 動態選擇對應的模型。
-    Supervisor 使用較低溫度以確保決策穩定。
+    根据 user_context 动态选择对应的模型。
+    Supervisor 使用较低温度以确保决策稳定。
     """
     import os
     # 清理与 httpx SSL 验证冲突的环境变量
@@ -193,13 +193,13 @@ def create_supervisor_node(
     2. 交给哪个 Worker 处理
     3. 或者结束任务（FINISH）
     
-    動態模型選擇：
-    LLM 會根據 state["user_context"] 動態選擇對應的模型。
-    這允許不同路由（Customize、Qwen、Gemini）使用各自配置的模型。
+    动态模型选择：
+    LLM 会根据 state["user_context"] 动态选择对应的模型。
+    这允许不同路由（Customize、Qwen、Gemini）使用各自配置的模型。
     
     Args:
         config: Supervisor 配置，如果为 None 则使用默认配置
-        llm: 可选的 LLM 实例，用于测试时注入 mock（覆蓋動態選擇）
+        llm: 可选的 LLM 实例，用于测试时注入 mock（覆盖动态选择）
     
     Returns:
         一个异步函数，接受 SupervisorState 并返回更新后的状态
@@ -208,7 +208,7 @@ def create_supervisor_node(
         config = SupervisorConfig()
     config.validate()
     
-    # 如果提供了 llm（用於測試），則使用它；否則會在每次請求時根據 state 動態創建
+    # 如果提供了 llm（用于测试），则使用它；否则会在每次请求时根据 state 动态创建
     _fixed_llm = llm
     
     async def _plan_task(state: SupervisorState, registry) -> Dict[str, Any]:
@@ -219,7 +219,7 @@ def create_supervisor_node(
         """
         logger.info("📋 [Supervisor] 开始任务规划...")
         
-        # 根據用戶上下文動態獲取 LLM
+        # 根据用户上下文动态获取 LLM
         llm = _fixed_llm or _get_llm_from_state(state, temperature=config.temperature)
         
         worker_list = registry.get_formatted_descriptions()
@@ -233,7 +233,7 @@ def create_supervisor_node(
                 # 转换为 TaskStep 列表
                 task_plan = []
                 for i, step in enumerate(result.steps):
-                    # 清理 Worker 名稱，移除可能的類型標記（如 "Researcher [llm_powered]" -> "Researcher"）
+                    # 清理 Worker 名称，移除可能的类型标记（如 "Researcher [llm_powered]" -> "Researcher"）
                     worker_name = step.get("worker", "General")
                     if "[" in worker_name:
                         worker_name = worker_name.split("[")[0].strip()
@@ -335,7 +335,7 @@ def create_supervisor_node(
         # 找到下一个未完成的步骤
         for i, step in enumerate(task_plan):
             step_status = step.get("status")
-            # 處理 status 可能是字符串或枚舉的情況
+            # 处理 status 可能是字符串或枚举的情况
             if isinstance(step_status, str):
                 is_completed = step_status in ["completed", "skipped", "failed"]
             else:
@@ -343,10 +343,10 @@ def create_supervisor_node(
             
             if not is_completed:
                 next_worker = step.get("worker", "General")
-                # 處理 LLM 可能返回帶有類型標記的 Worker 名稱，如 "Researcher [llm_powered]"
+                # 处理 LLM 可能返回带有类型标记的 Worker 名称，如 "Researcher [llm_powered]"
                 if "[" in next_worker:
                     next_worker = next_worker.split("[")[0].strip()
-                # 嘗試精確匹配
+                # 尝试精确匹配
                 if next_worker in worker_names:
                     logger.info(f"🎯 [Supervisor] 按计划执行步骤 {i+1}: {next_worker}")
                     thinking_step = create_thinking_step(
@@ -357,7 +357,7 @@ def create_supervisor_node(
                         "next": next_worker,
                         "thinking_steps": state.get("thinking_steps", []) + [thinking_step],
                     }
-                # 嘗試不區分大小寫匹配
+                # 尝试不区分大小写匹配
                 elif next_worker.lower() in worker_names_lower:
                     actual_worker = worker_names_lower[next_worker.lower()]
                     logger.info(f"🎯 [Supervisor] 按计划执行步骤 {i+1}: {actual_worker} (原名: {next_worker})")
@@ -370,8 +370,8 @@ def create_supervisor_node(
                         "thinking_steps": state.get("thinking_steps", []) + [thinking_step],
                     }
                 else:
-                    # Worker 名稱無效，使用 General 作為備選
-                    logger.warning(f"計劃中的 Worker '{next_worker}' 不存在，使用 General 代替")
+                    # Worker 名称无效，使用 General 作为备选
+                    logger.warning(f"计划中的 Worker '{next_worker}' 不存在，使用 General 代替")
                     if "General" in worker_names:
                         thinking_step = create_thinking_step(
                             step_type="decision",
@@ -408,7 +408,7 @@ def create_supervisor_node(
                 if next_action not in valid_options:
                     logger.warning(f"Supervisor 返回了无效的路由选项: {next_action}")
                     
-                    # 嘗試從 reasoning 中智能提取正確的 Worker 名稱
+                    # 尝试从 reasoning 中智能提取正确的 Worker 名称
                     fallback_worker = None
                     reasoning_lower = reasoning.lower() if reasoning else ""
                     for worker_name in worker_names:
@@ -417,28 +417,28 @@ def create_supervisor_node(
                             break
                     
                     if fallback_worker:
-                        logger.info(f"從 reasoning 中推斷出目標 Worker: {fallback_worker}")
+                        logger.info(f"从 reasoning 中推断出目标 Worker: {fallback_worker}")
                         next_action = fallback_worker
                     else:
-                        # 如果還有未完成的任務步驟，使用計劃中的 Worker
+                        # 如果还有未完成的任务步骤，使用计划中的 Worker
                         for step in task_plan:
                             if step.get("status") not in [TaskStatus.COMPLETED, TaskStatus.SKIPPED, TaskStatus.FAILED]:
                                 planned_worker = step.get("worker", "General")
-                                # 處理帶有類型標記的 Worker 名稱
+                                # 处理带有类型标记的 Worker 名称
                                 if "[" in planned_worker:
                                     planned_worker = planned_worker.split("[")[0].strip()
                                 if planned_worker in worker_names:
-                                    logger.info(f"使用任務計劃中的 Worker: {planned_worker}")
+                                    logger.info(f"使用任务计划中的 Worker: {planned_worker}")
                                     next_action = planned_worker
                                     break
                         else:
-                            # 最終回退到 FINISH
-                            logger.warning(f"無法推斷有效的 Worker，使用 FINISH")
+                            # 最终回退到 FINISH
+                            logger.warning(f"无法推断有效的 Worker，使用 FINISH")
                             next_action = "FINISH"
                 
-                # 關鍵檢查：如果 LLM 返回 FINISH 但還有未完成的任務，強制使用計劃中的 Worker
+                # 关键检查：如果 LLM 返回 FINISH 但还有未完成的任务，强制使用计划中的 Worker
                 if next_action == "FINISH" and completed_steps < total_steps:
-                    logger.warning(f"LLM 返回 FINISH 但還有未完成任務 ({completed_steps}/{total_steps})，嘗試使用計劃中的 Worker")
+                    logger.warning(f"LLM 返回 FINISH 但还有未完成任务 ({completed_steps}/{total_steps})，尝试使用计划中的 Worker")
                     for step in task_plan:
                         step_status = step.get("status")
                         if isinstance(step_status, str):
@@ -448,26 +448,26 @@ def create_supervisor_node(
                         
                         if not is_completed:
                             planned_worker = step.get("worker", "General")
-                            # 處理帶有類型標記的 Worker 名稱
+                            # 处理带有类型标记的 Worker 名称
                             if "[" in planned_worker:
                                 planned_worker = planned_worker.split("[")[0].strip()
-                            # 嘗試找到匹配的 Worker
+                            # 尝试找到匹配的 Worker
                             if planned_worker in worker_names:
                                 next_action = planned_worker
-                                logger.info(f"強制使用計劃中的 Worker: {next_action}")
+                                logger.info(f"强制使用计划中的 Worker: {next_action}")
                                 break
                             elif planned_worker.lower() in {n.lower() for n in worker_names}:
                                 for wn in worker_names:
                                     if wn.lower() == planned_worker.lower():
                                         next_action = wn
-                                        logger.info(f"強制使用計劃中的 Worker: {next_action}")
+                                        logger.info(f"强制使用计划中的 Worker: {next_action}")
                                         break
                                 break
                     else:
                         # 如果找不到匹配的 Worker，使用 General
                         if "General" in worker_names:
                             next_action = "General"
-                            logger.info(f"使用 General 作為備選")
+                            logger.info(f"使用 General 作为备选")
                 
                 thinking_step = create_thinking_step(
                     step_type="decision",
@@ -523,15 +523,19 @@ def create_supervisor_node(
                 return {"next": "FINISH", "iteration_count": iteration_count + 1}
             
             # 阶段 1：任务规划（如果启用且还没有规划）
+            planning_result: Dict[str, Any] = {}
             if config.enable_planning and not state.get("task_plan"):
                 planning_result = await _plan_task(state, registry)
-                # 合并规划结果并继续决策
+                # 合并规划结果并继续决策（注意：需要把规划结果写回状态，否则下一轮会重复规划）
                 state = {**state, **planning_result}
             
             # 阶段 2：路由决策
             routing_result = await _route_decision(state, registry)
             
             return {
+                # 先写入 planning_result，让 task_plan/current_step_index 等字段进入图状态；
+                # routing_result 允许覆盖（例如 should_replan 时返回 task_plan: []）
+                **planning_result,
                 **routing_result,
                 "iteration_count": iteration_count + 1,
             }

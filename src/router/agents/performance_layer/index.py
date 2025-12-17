@@ -6,29 +6,51 @@
 2. 规则引擎 (Rule Engine)：处理非推理类指令，基于关键词或正则匹配
 """
 
+from __future__ import annotations
+
 import os
 import re
 import json
 import hashlib
 from typing import Optional, Dict, Any, List, Tuple
-from functools import lru_cache
+from src.server.logging_setup import logger
 
-import numpy as np
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import JSONResponse
-from starlette.types import ASGIApp
+# 这个模组会被服务层「可选」导入；因此任何重依赖都必须是可选的，
+# 否则会导致整个 Performance Layer 被禁用（连 RuleEngine 也用不了）。
 
+# === 可选依赖：numpy（语义快取需要）===
 try:
-    import redis
-    from sentence_transformers import SentenceTransformer
+    import numpy as np  # type: ignore
+    NUMPY_AVAILABLE = True
+except Exception as e:
+    NUMPY_AVAILABLE = False
+    np = None  # type: ignore
+    logger.warning(f"Performance Layer: numpy 不可用，将禁用语义缓存相关功能: {e}")
+
+# === 可选依赖：FastAPI / Starlette（仅 middleware 需要）===
+try:
+    from fastapi import Request, Response  # type: ignore
+    from starlette.middleware.base import BaseHTTPMiddleware  # type: ignore
+    from starlette.types import ASGIApp  # type: ignore
+    FASTAPI_AVAILABLE = True
+except Exception as e:
+    FASTAPI_AVAILABLE = False
+    Request = Response = ASGIApp = object  # type: ignore
+    BaseHTTPMiddleware = object  # type: ignore
+    logger.warning(f"Performance Layer: FastAPI/Starlette 不可用，将禁用 middleware: {e}")
+
+# === 可选依赖：Redis / sentence-transformers（语义快取需要）===
+try:
+    import redis  # type: ignore
+    from sentence_transformers import SentenceTransformer  # type: ignore
     REDIS_AVAILABLE = True
     SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
+except Exception as e:
     REDIS_AVAILABLE = False
     SENTENCE_TRANSFORMERS_AVAILABLE = False
-
-from src.server.logging_setup import logger
+    redis = None  # type: ignore
+    SentenceTransformer = None  # type: ignore
+    logger.warning(f"Performance Layer: Redis 或 sentence-transformers 不可用，将禁用语义缓存: {e}")
 
 
 class SemanticCache:
@@ -63,7 +85,13 @@ class SemanticCache:
         """
         self.similarity_threshold = similarity_threshold
         self.cache_prefix = cache_prefix
-        self.enable_cache = enable_cache and REDIS_AVAILABLE
+        # 语义缓存依赖：redis + sentence-transformers + numpy
+        self.enable_cache = (
+            enable_cache
+            and REDIS_AVAILABLE
+            and SENTENCE_TRANSFORMERS_AVAILABLE
+            and NUMPY_AVAILABLE
+        )
 
         # 初始化 Redis 客户端
         self.redis_client = None
@@ -364,6 +392,8 @@ class PerformanceLayerMiddleware(BaseHTTPMiddleware):
             skip_paths: 需要跳过优化的路径列表
             **kwargs: 传递给 SemanticCache 和 RuleEngine 的其他参数
         """
+        if not FASTAPI_AVAILABLE:
+            raise ImportError("FastAPI/Starlette 未安装，无法启用 PerformanceLayerMiddleware")
         super().__init__(app)
         self.enable_performance_layer = enable_performance_layer
         self.skip_paths = [path.rstrip("/") or "/" for path in (skip_paths or [])]

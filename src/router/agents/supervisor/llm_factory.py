@@ -1,11 +1,11 @@
 """
 Supervisor Architecture - LLM Factory
 
-動態 LLM 創建工廠，根據用戶上下文選擇對應的模型。
+动态 LLM 创建工厂，根据用户上下文选择对应的模型。
 
-支持的模型來源：
-1. Customize (SELF_MODEL_*) - 自定義模型
-2. Qwen (QWEN_*) - 通義千問
+支持的模型来源：
+1. Customize (SELF_MODEL_*) - 自定义模型
+2. Qwen (QWEN_*) - 通义千问
 3. Gemini (GEMINI_*) - Google Gemini
 
 使用方式：
@@ -23,29 +23,35 @@ from langchain_core.language_models import BaseChatModel
 from src.server.logging_setup import logger
 
 
-# === 常量定義 ===
+# === 常量定义 ===
 _SAFE_USER_AGENT = "python-httpx/0.28.0"
 _HTTP_TIMEOUT = 60.0
 
-# 默認 API 端點
+# 复用 AsyncClient，避免每次建连带来的额外延迟
+_shared_async_client: Optional[httpx.AsyncClient] = None
+
+# 默认 API 端点
 _DEFAULT_QWEN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 _DEFAULT_QWEN_MODEL = "qwen-plus"
 
 
 def _create_no_proxy_client() -> httpx.AsyncClient:
     """
-    創建不使用系統代理的 HTTP 客戶端
+    创建不使用系统代理的 HTTP 客户端
     
-    用於繞過系統代理設置，直接連接到 API 服務器。
+    用于绕过系统代理设置，直接连接到 API 服务器。
     """
-    return httpx.AsyncClient(proxy=None, timeout=_HTTP_TIMEOUT)
+    global _shared_async_client
+    if _shared_async_client is None or _shared_async_client.is_closed:
+        _shared_async_client = httpx.AsyncClient(proxy=None, timeout=_HTTP_TIMEOUT)
+    return _shared_async_client
 
 
 def _validate_ascii(value: Optional[str], name: str) -> Optional[str]:
     """
-    驗證字符串是否只包含 ASCII 字符
+    验证字符串是否只包含 ASCII 字符
     
-    HTTP headers 只能包含 ASCII 字符，非 ASCII 字符會導致 UnicodeEncodeError。
+    HTTP headers 只能包含 ASCII 字符，非 ASCII 字符会导致 UnicodeEncodeError。
     """
     if value is None:
         return None
@@ -56,21 +62,21 @@ def _validate_ascii(value: Optional[str], name: str) -> Optional[str]:
         non_ascii = [(i, c, hex(ord(c))) for i, c in enumerate(value) if ord(c) > 127]
         details = ", ".join([f"位置{i}:'{c}'({h})" for i, c, h in non_ascii[:5]])
         raise ValueError(
-            f"環境變量 {name} 包含非 ASCII 字符: {details}。"
-            f"HTTP headers 只能使用 ASCII 字符。請檢查 .env 文件。"
+            f"环境变量 {name} 包含非 ASCII 字符: {details}。"
+            f"HTTP headers 只能使用 ASCII 字符。请检查 .env 文件。"
         )
     
     return value
 
 
 def _get_env_validated(name: str, default: Optional[str] = None) -> Optional[str]:
-    """獲取環境變量並驗證 ASCII"""
+    """获取环境变量并验证 ASCII"""
     value = os.getenv(name, default)
     return _validate_ascii(value, name)
 
 
 class ModelConfig:
-    """模型配置類"""
+    """模型配置类"""
     
     def __init__(
         self,
@@ -85,7 +91,7 @@ class ModelConfig:
         self.source = source
     
     def is_valid(self) -> bool:
-        """檢查配置是否有效（至少需要 API key）"""
+        """检查配置是否有效（至少需要 API key）"""
         return bool(self.api_key)
     
     def __repr__(self) -> str:
@@ -96,25 +102,25 @@ def get_model_config_from_context(
     user_context: Optional[Dict[str, Any]] = None,
 ) -> ModelConfig:
     """
-    從用戶上下文中獲取模型配置
+    从用户上下文中获取模型配置
     
-    優先級：
-    1. user_context["preferences"]["custom_model"] - 請求級別配置
-    2. user_context["preferences"]["model_source"] - 指定模型來源
-    3. 環境變量預設值
+    优先级：
+    1. user_context["preferences"]["custom_model"] - 请求级别配置
+    2. user_context["preferences"]["model_source"] - 指定模型来源
+    3. 环境变量预设值
     
     Args:
-        user_context: 用戶上下文
+        user_context: 用户上下文
         
     Returns:
-        ModelConfig 實例
+        ModelConfig 实例
     """
     if user_context is None:
         user_context = {}
     
     preferences = user_context.get("preferences", {})
     
-    # 1. 檢查是否有 custom_model（來自 Customize 路由）
+    # 1. 检查是否有 custom_model（来自 Customize 路由）
     custom_model = preferences.get("custom_model")
     if custom_model and custom_model.get("api_key"):
         logger.debug(f"[LLM Factory] 使用 Customize 模型: {custom_model.get('model_name')}")
@@ -125,7 +131,7 @@ def get_model_config_from_context(
             source="customize",
         )
     
-    # 2. 檢查是否有 qwen_model（來自 Qwen 路由）
+    # 2. 检查是否有 qwen_model（来自 Qwen 路由）
     qwen_model = preferences.get("qwen_model")
     if qwen_model and qwen_model.get("api_key"):
         logger.debug(f"[LLM Factory] 使用 Qwen 模型: {qwen_model.get('model_name')}")
@@ -139,11 +145,11 @@ def get_model_config_from_context(
             source="qwen",
         )
     
-    # 3. 檢查是否指定了模型來源
+    # 3. 检查是否指定了模型来源
     model_source = preferences.get("model_source", "").lower()
     
     if model_source == "customize" or model_source == "self":
-        # 使用自定義模型環境變量
+        # 使用自定义模型环境变量
         api_key = _get_env_validated("SELF_MODEL_API_KEY")
         if api_key:
             return ModelConfig(
@@ -154,7 +160,7 @@ def get_model_config_from_context(
             )
     
     elif model_source == "qwen":
-        # 使用 Qwen 環境變量
+        # 使用 Qwen 环境变量
         api_key = _get_env_validated("QWEN_API_KEY")
         if api_key:
             return ModelConfig(
@@ -164,14 +170,14 @@ def get_model_config_from_context(
                 source="qwen",
             )
     
-    # 4. 預設：按順序嘗試各個模型
-    # 順序：Customize > Qwen
+    # 4. 预设：按顺序尝试各个模型
+    # 顺序：Customize > Qwen
     
-    # 嘗試 Customize
+    # 尝试 Customize
     self_api_key = _get_env_validated("SELF_MODEL_API_KEY")
     self_base_url = _get_env_validated("SELF_MODEL_BASE_URL")
     if self_api_key and self_base_url:
-        logger.debug("[LLM Factory] 使用預設 Customize 模型")
+        logger.debug("[LLM Factory] 使用预设 Customize 模型")
         return ModelConfig(
             api_key=self_api_key,
             base_url=self_base_url,
@@ -179,10 +185,10 @@ def get_model_config_from_context(
             source="customize",
         )
     
-    # 嘗試 Qwen
+    # 尝试 Qwen
     qwen_api_key = _get_env_validated("QWEN_API_KEY")
     if qwen_api_key:
-        logger.debug("[LLM Factory] 使用預設 Qwen 模型")
+        logger.debug("[LLM Factory] 使用预设 Qwen 模型")
         return ModelConfig(
             api_key=qwen_api_key,
             base_url=_get_env_validated("QWEN_BASE_URL", _DEFAULT_QWEN_BASE_URL),
@@ -190,8 +196,8 @@ def get_model_config_from_context(
             source="qwen",
         )
     
-    # 沒有配置任何模型，返回無效配置
-    logger.warning("[LLM Factory] 沒有配置任何有效的模型")
+    # 没有配置任何模型，返回无效配置
+    logger.warning("[LLM Factory] 没有配置任何有效的模型")
     return ModelConfig(
         api_key=None,
         base_url=None,
@@ -206,20 +212,20 @@ def create_llm_from_context(
     **kwargs,
 ) -> BaseChatModel:
     """
-    根據用戶上下文創建 LLM 實例
+    根据用户上下文创建 LLM 实例
     
-    這是 Workers 應該使用的主要函數。根據路由和配置自動選擇正確的模型。
+    这是 Workers 应该使用的主要函数。根据路由和配置自动选择正确的模型。
     
     Args:
-        user_context: 用戶上下文（來自 state["user_context"]）
-        temperature: 溫度參數
-        **kwargs: 傳遞給 ChatOpenAI 的其他參數
+        user_context: 用户上下文（来自 state["user_context"]）
+        temperature: 温度参数
+        **kwargs: 传递给 ChatOpenAI 的其他参数
         
     Returns:
-        BaseChatModel 實例（ChatOpenAI）
+        BaseChatModel 实例（ChatOpenAI）
         
     Raises:
-        ValueError: 當沒有配置任何有效的 API key 時
+        ValueError: 当没有配置任何有效的 API key 时
         
     Usage:
         # 在 Worker 中
@@ -232,18 +238,18 @@ def create_llm_from_context(
     
     if not config.is_valid():
         raise ValueError(
-            "沒有配置有效的 AI 模型。請設置以下環境變量之一：\n"
-            "- SELF_MODEL_API_KEY + SELF_MODEL_BASE_URL（自定義模型）\n"
-            "- QWEN_API_KEY（通義千問）"
+            "没有配置有效的 AI 模型。请设置以下环境变量之一：\n"
+            "- SELF_MODEL_API_KEY + SELF_MODEL_BASE_URL（自定义模型）\n"
+            "- QWEN_API_KEY（通义千问）"
         )
     
-    logger.info(f"[LLM Factory] 創建 LLM: {config}")
+    logger.info(f"[LLM Factory] 创建 LLM: {config}")
     
     llm_kwargs = {
         "model": config.model_name,
         "api_key": config.api_key,
         "temperature": temperature,
-        "http_async_client": _create_no_proxy_client(),  # 禁用系統代理
+        "http_async_client": _create_no_proxy_client(),  # 禁用系统代理
         "default_headers": {"User-Agent": _SAFE_USER_AGENT},  # 避免被 WAF 阻止
         **kwargs,
     }
@@ -260,23 +266,23 @@ def create_llm_from_state(
     **kwargs,
 ) -> BaseChatModel:
     """
-    從 SupervisorState 創建 LLM 實例
+    从 SupervisorState 创建 LLM 实例
     
-    這是一個便捷函數，直接從 state 提取 user_context。
+    这是一个便捷函数，直接从 state 提取 user_context。
     
     Args:
         state: SupervisorState 或包含 user_context 的字典
-        temperature: 溫度參數
-        **kwargs: 傳遞給 ChatOpenAI 的其他參數
+        temperature: 温度参数
+        **kwargs: 传递给 ChatOpenAI 的其他参数
         
     Returns:
-        BaseChatModel 實例
+        BaseChatModel 实例
     """
     user_context = state.get("user_context", {})
     return create_llm_from_context(user_context, temperature, **kwargs)
 
 
-# 導出公共接口
+# 导出公共接口
 __all__ = [
     "create_llm_from_context",
     "create_llm_from_state",

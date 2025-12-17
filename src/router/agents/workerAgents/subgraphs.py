@@ -10,8 +10,8 @@ Supervisor Architecture - Subgraph Workers
 
 自愈机制：生成 -> 执行 -> 报错 -> 反思 -> 重写 -> 执行
 
-注意：子图目前使用環境變量配置的模型，因為子圖狀態不包含 user_context。
-未來可考慮在子圖狀態中傳遞模型配置。
+注意：子图目前使用环境变量配置的模型，因为子图状态不包含 user_context。
+未来可考虑在子图状态中传递模型配置。
 """
 
 from typing import TypedDict, List, Annotated, Optional, Dict, Any
@@ -28,10 +28,10 @@ from src.server.logging_setup import logger
 
 def _get_default_llm(temperature: float = 0.0) -> BaseChatModel:
     """
-    獲取預設的 LLM 實例（用於子圖）
+    获取预设的 LLM 实例（用于子图）
     
-    子圖目前不直接訪問 user_context，所以使用預設配置。
-    LLM Factory 會按優先順序嘗試：Customize > Qwen
+    子图目前不直接访问 user_context，所以使用预设配置。
+    LLM Factory 会按优先顺序尝试：Customize > Qwen
     """
     return create_llm_from_context(user_context=None, temperature=temperature)
 
@@ -151,7 +151,7 @@ def generate_sql_node(state: DataState) -> Dict[str, Any]:
         db = get_db()
         schema = db.get_table_info()
     
-    # 使用 LLM Factory 獲取模型（按優先順序：Customize > Qwen）
+    # 使用 LLM Factory 获取模型（按优先顺序：Customize > Qwen）
     llm = _get_default_llm(temperature=0)
     
     # 动态 Prompt：如果有错，要把错误信息加进去
@@ -220,7 +220,7 @@ def analyze_result_node(state: DataState) -> Dict[str, Any]:
     result = state["query_result"]
     question = state["question"]
     
-    # 使用 LLM Factory 獲取模型
+    # 使用 LLM Factory 获取模型
     llm = _get_default_llm(temperature=0.3)
     
     prompt = ChatPromptTemplate.from_messages([

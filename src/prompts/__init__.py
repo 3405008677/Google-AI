@@ -1,14 +1,14 @@
 """
-提示詞與工具管理模組（向後兼容層）
+提示词与工具管理模组（向后兼容层）
 
-此模組保持向後兼容，實際實現已移至 src/common/prompts 和 src/common/function_calls。
+此模组保持向后兼容，实际实现已移至 src/common/prompts 和 src/common/function_calls。
 
-推薦使用新的導入路徑：
+推荐使用新的导入路径：
     from src.common.prompts import get_prompt, reload_prompts
     from src.common.function_calls import get_tool, get_tools
 """
 
-# 從公共模組重新導出提示詞相關函數
+# 从公共模组重新导出提示词相关函数
 from src.common.prompts import (
     PromptManager,
     get_prompt_manager,
@@ -18,7 +18,7 @@ from src.common.prompts import (
     has_prompt,
 )
 
-# 從公共模組重新導出工具相關函數
+# 从公共模组重新导出工具相关函数
 from src.common.function_calls import (
     get_tool,
     get_tools,
@@ -29,7 +29,7 @@ from src.common.function_calls import (
 )
 
 __all__ = [
-    # 提示詞管理
+    # 提示词管理
     "PromptManager",
     "get_prompt_manager",
     "get_prompt",

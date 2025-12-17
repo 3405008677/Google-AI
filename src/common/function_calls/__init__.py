@@ -1,11 +1,11 @@
 """
-統一 Function Call 工具管理模組
+统一 Function Call 工具管理模组
 
-提供集中化的工具定義和管理，支持：
-1. YAML 配置文件定義工具 Schema
-2. 工具註冊和發現
-3. LangChain 格式轉換
-4. 工具執行器管理
+提供集中化的工具定义和管理，支持：
+1. YAML 配置文件定义工具 Schema
+2. 工具注册和发现
+3. LangChain 格式转换
+4. 工具执行器管理
 
 使用方式：
     from src.common.function_calls import (
@@ -15,17 +15,17 @@
         register_tool,
     )
     
-    # 獲取單個工具定義
+    # 获取单个工具定义
     tool = get_tool("get_current_datetime")
     
-    # 獲取多個工具定義
+    # 获取多个工具定义
     tools = get_tools(["get_current_datetime", "web_search"])
     
-    # 獲取工具執行器
+    # 获取工具执行器
     executor = get_tool_executor("get_current_datetime")
     result = await executor.ainvoke({"timezone": "Asia/Shanghai"})
     
-    # 註冊自定義工具
+    # 注册自定义工具
     register_tool("my_tool", schema, executor)
 """
 

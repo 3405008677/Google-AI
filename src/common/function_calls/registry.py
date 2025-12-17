@@ -1,7 +1,7 @@
 """
-工具註冊表
+工具注册表
 
-提供工具的註冊、發現和執行功能。
+提供工具的注册、发现和执行功能。
 """
 
 import yaml
@@ -16,14 +16,14 @@ from src.server.logging_setup import logger
 
 @dataclass
 class ToolSchema:
-    """工具 Schema 定義"""
+    """工具 Schema 定义"""
     name: str
     description: str
     parameters: Dict[str, Any]
     implementation: Optional[Dict[str, str]] = None
     
     def to_openai_format(self) -> Dict[str, Any]:
-        """轉換為 OpenAI function calling 格式"""
+        """转换为 OpenAI function calling 格式"""
         return {
             "name": self.name,
             "description": self.description,
@@ -31,7 +31,7 @@ class ToolSchema:
         }
     
     def to_langchain_format(self) -> Dict[str, Any]:
-        """轉換為 LangChain 工具格式"""
+        """转换为 LangChain 工具格式"""
         return {
             "type": "function",
             "function": self.to_openai_format(),
@@ -39,31 +39,31 @@ class ToolSchema:
 
 
 class BaseToolExecutor(ABC):
-    """工具執行器基類"""
+    """工具执行器基类"""
     
     @abstractmethod
     def invoke(self, params: Dict[str, Any]) -> Any:
-        """同步執行工具"""
+        """同步执行工具"""
         pass
     
     @abstractmethod
     async def ainvoke(self, params: Dict[str, Any]) -> Any:
-        """異步執行工具"""
+        """异步执行工具"""
         pass
 
 
 class ToolRegistry:
     """
-    工具註冊表
+    工具注册表
     
-    線程安全的單例模式，管理所有工具定義和執行器。
+    线程安全的单例模式，管理所有工具定义和执行器。
     """
     
     _instance: Optional["ToolRegistry"] = None
     _lock = threading.Lock()
     
     def __new__(cls, config_path: Optional[Path] = None):
-        """單例模式"""
+        """单例模式"""
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
@@ -74,10 +74,10 @@ class ToolRegistry:
     
     def __init__(self, config_path: Optional[Path] = None):
         """
-        初始化工具註冊表
+        初始化工具注册表
         
         Args:
-            config_path: 配置文件路徑，默認為 src/common/function_calls/config.yaml
+            config_path: 配置文件路径，默认为 src/common/function_calls/config.yaml
         """
         if self._initialized:
             return
@@ -92,10 +92,10 @@ class ToolRegistry:
         self._register_builtin_tools()
         self._initialized = True
         
-        logger.info(f"✅ ToolRegistry 初始化完成，已加載 {len(self._schemas)} 個工具")
+        logger.info(f"✅ ToolRegistry 初始化完成，已加载 {len(self._schemas)} 个工具")
     
     def _load_config(self) -> None:
-        """從配置文件加載工具定義"""
+        """从配置文件加载工具定义"""
         with self._load_lock:
             try:
                 if not self.config_path.exists():
@@ -105,7 +105,7 @@ class ToolRegistry:
                 with open(self.config_path, 'r', encoding='utf-8') as f:
                     config = yaml.safe_load(f) or {}
                 
-                # 加載工具定義
+                # 加载工具定义
                 tools_config = config.get("tools", {})
                 for name, tool_def in tools_config.items():
                     schema = ToolSchema(
@@ -116,19 +116,19 @@ class ToolRegistry:
                     )
                     self._schemas[name] = schema
                 
-                # 加載 Worker 工具配置
+                # 加载 Worker 工具配置
                 self._worker_tools = config.get("worker_tools", {})
                 
-                logger.debug(f"工具配置已加載，包含 {len(self._schemas)} 個工具定義")
+                logger.debug(f"工具配置已加载，包含 {len(self._schemas)} 个工具定义")
                 
             except yaml.YAMLError as e:
-                logger.error(f"工具配置文件格式錯誤: {e}")
+                logger.error(f"工具配置文件格式错误: {e}")
             except Exception as e:
-                logger.error(f"加載工具配置失敗: {e}")
+                logger.error(f"加载工具配置失败: {e}")
     
     def _register_builtin_tools(self) -> None:
-        """註冊內置工具執行器"""
-        # 註冊時間日期工具
+        """注册内置工具执行器"""
+        # 注册时间日期工具
         try:
             from src.tools.datetime_tool import DateTimeTool
             
@@ -143,11 +143,11 @@ class ToolRegistry:
                     return await self._tool.ainvoke(params)
             
             self._executors["get_current_datetime"] = DateTimeExecutor()
-            logger.debug("已註冊內置工具: get_current_datetime")
+            logger.debug("已注册内置工具: get_current_datetime")
         except ImportError as e:
-            logger.warning(f"無法加載時間日期工具: {e}")
+            logger.warning(f"无法加载时间日期工具: {e}")
         
-        # 註冊 Tavily 搜索工具
+        # 注册 Tavily 搜索工具
         try:
             from src.tools.search import TavilySearchTool, is_tavily_configured
             
@@ -165,14 +165,14 @@ class ToolRegistry:
                         return await self._tool.ainvoke(query)
                 
                 self._executors["tavily_search"] = TavilyExecutor()
-                self._executors["web_search"] = TavilyExecutor()  # 別名
-                logger.debug("已註冊內置工具: tavily_search, web_search")
+                self._executors["web_search"] = TavilyExecutor()  # 别名
+                logger.debug("已注册内置工具: tavily_search, web_search")
         except ImportError as e:
-            logger.warning(f"無法加載 Tavily 搜索工具: {e}")
+            logger.warning(f"无法加载 Tavily 搜索工具: {e}")
     
     def reload(self) -> bool:
         """
-        重新加載配置
+        重新加载配置
         
         Returns:
             是否成功
@@ -181,10 +181,10 @@ class ToolRegistry:
             self._schemas.clear()
             self._worker_tools.clear()
             self._load_config()
-            logger.info("🔄 工具配置已重新加載")
+            logger.info("🔄 工具配置已重新加载")
             return True
         except Exception as e:
-            logger.error(f"重新加載工具配置失敗: {e}")
+            logger.error(f"重新加载工具配置失败: {e}")
             return False
     
     def register(
@@ -194,12 +194,12 @@ class ToolRegistry:
         executor: Optional[BaseToolExecutor] = None,
     ) -> None:
         """
-        註冊工具
+        注册工具
         
         Args:
-            name: 工具名稱
-            schema: 工具 Schema（ToolSchema 實例或字典）
-            executor: 工具執行器（可選）
+            name: 工具名称
+            schema: 工具 Schema（ToolSchema 实例或字典）
+            executor: 工具执行器（可选）
         """
         if isinstance(schema, dict):
             schema = ToolSchema(
@@ -213,38 +213,38 @@ class ToolRegistry:
         if executor:
             self._executors[name] = executor
         
-        logger.info(f"已註冊工具: {name}")
+        logger.info(f"已注册工具: {name}")
     
     def get_schema(self, name: str) -> Optional[ToolSchema]:
-        """獲取工具 Schema"""
+        """获取工具 Schema"""
         return self._schemas.get(name)
     
     def get_executor(self, name: str) -> Optional[BaseToolExecutor]:
-        """獲取工具執行器"""
+        """获取工具执行器"""
         return self._executors.get(name)
     
     def get_tool(self, name: str) -> Optional[Dict[str, Any]]:
         """
-        獲取工具定義（OpenAI 格式）
+        获取工具定义（OpenAI 格式）
         
         Args:
-            name: 工具名稱
+            name: 工具名称
             
         Returns:
-            工具定義字典
+            工具定义字典
         """
         schema = self._schemas.get(name)
         return schema.to_openai_format() if schema else None
     
     def get_tools(self, names: List[str]) -> List[Dict[str, Any]]:
         """
-        獲取多個工具定義
+        获取多个工具定义
         
         Args:
-            names: 工具名稱列表
+            names: 工具名称列表
             
         Returns:
-            工具定義列表
+            工具定义列表
         """
         result = []
         for name in names:
@@ -256,32 +256,32 @@ class ToolRegistry:
         return result
     
     def get_all_tools(self) -> Dict[str, Dict[str, Any]]:
-        """獲取所有工具定義"""
+        """获取所有工具定义"""
         return {name: schema.to_openai_format() for name, schema in self._schemas.items()}
     
     def get_worker_tools(self, worker_name: str) -> List[Dict[str, Any]]:
         """
-        獲取指定 Worker 的工具列表
+        获取指定 Worker 的工具列表
         
         Args:
-            worker_name: Worker 名稱
+            worker_name: Worker 名称
             
         Returns:
-            工具定義列表
+            工具定义列表
         """
         tool_names = self._worker_tools.get(worker_name, [])
         return self.get_tools(tool_names)
     
     def list_tools(self) -> List[str]:
-        """列出所有工具名稱"""
+        """列出所有工具名称"""
         return list(self._schemas.keys())
     
     def to_langchain(self, names: List[str]) -> List[Dict[str, Any]]:
         """
-        轉換為 LangChain 格式
+        转换为 LangChain 格式
         
         Args:
-            names: 工具名稱列表
+            names: 工具名称列表
             
         Returns:
             LangChain 工具格式列表
@@ -294,13 +294,13 @@ class ToolRegistry:
         return result
 
 
-# === 模組級便捷函數 ===
+# === 模组级便捷函数 ===
 
 _registry_instance: Optional[ToolRegistry] = None
 
 
 def get_tool_registry() -> ToolRegistry:
-    """獲取工具註冊表實例（單例）"""
+    """获取工具注册表实例（单例）"""
     global _registry_instance
     if _registry_instance is None:
         _registry_instance = ToolRegistry()
@@ -308,37 +308,37 @@ def get_tool_registry() -> ToolRegistry:
 
 
 def get_tool(name: str) -> Optional[Dict[str, Any]]:
-    """獲取工具定義"""
+    """获取工具定义"""
     return get_tool_registry().get_tool(name)
 
 
 def get_tools(names: List[str]) -> List[Dict[str, Any]]:
-    """獲取多個工具定義"""
+    """获取多个工具定义"""
     return get_tool_registry().get_tools(names)
 
 
 def get_all_tools() -> Dict[str, Dict[str, Any]]:
-    """獲取所有工具定義"""
+    """获取所有工具定义"""
     return get_tool_registry().get_all_tools()
 
 
 def get_worker_tools(worker_name: str) -> List[Dict[str, Any]]:
-    """獲取指定 Worker 的工具列表"""
+    """获取指定 Worker 的工具列表"""
     return get_tool_registry().get_worker_tools(worker_name)
 
 
 def list_tools() -> List[str]:
-    """列出所有工具名稱"""
+    """列出所有工具名称"""
     return get_tool_registry().list_tools()
 
 
 def get_tools_for_langchain(names: List[str]) -> List[Dict[str, Any]]:
-    """獲取 LangChain 格式的工具定義"""
+    """获取 LangChain 格式的工具定义"""
     return get_tool_registry().to_langchain(names)
 
 
 def get_tool_executor(name: str) -> Optional[BaseToolExecutor]:
-    """獲取工具執行器"""
+    """获取工具执行器"""
     return get_tool_registry().get_executor(name)
 
 
@@ -347,11 +347,11 @@ def register_tool(
     schema: Union[ToolSchema, Dict[str, Any]],
     executor: Optional[BaseToolExecutor] = None,
 ) -> None:
-    """註冊工具"""
+    """注册工具"""
     get_tool_registry().register(name, schema, executor)
 
 
 def reload_tools() -> bool:
-    """重新加載工具配置"""
+    """重新加载工具配置"""
     return get_tool_registry().reload()
 

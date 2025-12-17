@@ -1,16 +1,16 @@
 """
 Supervisor Architecture - Worker Implementations
 
-具體的 Worker 實現，這些是 Layer 4 的專家團隊。
+具体的 Worker 实现，这些是 Layer 4 的专家团队。
 
-Worker 類型：
-1. Researcher: 搜索與調研專家
-2. DataAnalyst: 數據分析專家
-3. Writer: 內容創作專家
+Worker 类型：
+1. Researcher: 搜索与调研专家
+2. DataAnalyst: 数据分析专家
+3. Writer: 内容创作专家
 4. General: 通用助手
 
-動態模型選擇：
-Workers 會根據 user_context 自動選擇對應的 AI 模型。
+动态模型选择：
+Workers 会根据 user_context 自动选择对应的 AI 模型。
 """
 
 from typing import Dict, Any, List, Optional
@@ -27,19 +27,19 @@ from src.router.agents.supervisor.state import SupervisorState, create_thinking_
 from src.router.agents.supervisor.llm_factory import create_llm_from_state
 from src.server.logging_setup import logger
 
-# 使用新的公共模組
+# 使用新的公共模组
 from src.common.prompts import get_prompt
 from src.common.function_calls import get_tools_for_langchain, get_tool_executor
 
-# 工具導入
+# 工具导入
 from src.tools import get_tavily_search, is_tavily_configured, get_datetime_tool
 
 
 class BaseWorker(Worker, BaseWorkerMixin):
     """
-    Worker 基類
+    Worker 基类
     
-    提供所有 Worker 共用的功能，減少重複代碼。
+    提供所有 Worker 共用的功能，减少重复代码。
     """
     
     def __init__(
@@ -59,42 +59,42 @@ class BaseWorker(Worker, BaseWorkerMixin):
         self.default_temperature = default_temperature
     
     def get_llm(self, state: SupervisorState, temperature: Optional[float] = None) -> BaseChatModel:
-        """根據用戶上下文獲取對應的 LLM"""
+        """根据用户上下文获取对应的 LLM"""
         temp = temperature if temperature is not None else self.default_temperature
         return create_llm_from_state(state, temperature=temp)
     
     def get_query(self, state: SupervisorState) -> Optional[str]:
-        """獲取用戶查詢"""
+        """获取用户查询"""
         messages = state.get("messages", [])
         return self.get_original_query(state) or self.get_last_user_query(messages)
     
     def get_task_hint(self, state: SupervisorState) -> str:
-        """獲取當前任務描述的提示"""
+        """获取当前任务描述的提示"""
         current_step = self.get_current_task_step(state)
         if current_step:
             description = current_step.get("description", "")
             if description:
-                return f"任務要求：{description}\n\n"
+                return f"任务要求：{description}\n\n"
         return ""
     
     def log_start(self, emoji: str = "🔧") -> None:
-        """記錄任務開始日誌"""
-        logger.info(f"{emoji} [{self.name}] 開始執行任務")
+        """记录任务开始日志"""
+        logger.info(f"{emoji} [{self.name}] 开始执行任务")
         self._execution_count += 1
 
 
 class ResearcherWorker(BaseWorker):
     """
-    研究專家 Worker
+    研究专家 Worker
     
-    負責搜索和收集信息。
-    支持：Web 搜索（使用 Tavily API）、閱讀和摘要、追問搜索
+    负责搜索和收集信息。
+    支持：Web 搜索（使用 Tavily API）、阅读和摘要、追问搜索
     """
     
     def __init__(self, search_tool=None):
         super().__init__(
             name="Researcher",
-            description="搜索專家，擅長在互聯網上查找和收集信息。可以進行多輪搜索和信息整合，回答關於事實、數據、新聞等問題。",
+            description="搜索专家，擅长在互联网上查找和收集信息。可以进行多轮搜索和信息整合，回答关于事实、数据、新闻等问题。",
             priority=10,
             default_temperature=0.3,
         )
@@ -102,14 +102,14 @@ class ResearcherWorker(BaseWorker):
         self._tavily_configured = is_tavily_configured()
     
     async def _web_search(self, query: str) -> str:
-        """執行 Web 搜索"""
-        # 1. 如果有傳入的搜索工具，使用它
+        """执行 Web 搜索"""
+        # 1. 如果有传入的搜索工具，使用它
         if self.search_tool:
             try:
                 results = await self.search_tool.ainvoke(query)
                 return str(results)
             except Exception as e:
-                logger.warning(f"搜索工具調用失敗: {e}")
+                logger.warning(f"搜索工具调用失败: {e}")
         
         # 2. 使用 Tavily 搜索（如果已配置）
         if self._tavily_configured:
@@ -117,25 +117,25 @@ class ResearcherWorker(BaseWorker):
                 tavily = get_tavily_search()
                 return await tavily.ainvoke(query)
             except Exception as e:
-                logger.warning(f"Tavily 搜索失敗: {e}")
+                logger.warning(f"Tavily 搜索失败: {e}")
         
-        # 3. 降級方案
-        logger.warning(f"🔍 [{self.name}] Tavily 未配置，使用模擬搜索")
-        return f"關於 '{query}' 的搜索結果：[Tavily 未配置，請設置 TAVILY_API_KEY 環境變量以啟用聯網搜索]"
+        # 3. 降级方案
+        logger.warning(f"🔍 [{self.name}] Tavily 未配置，使用模拟搜索")
+        return f"关于 '{query}' 的搜索结果：[Tavily 未配置，请设置 TAVILY_API_KEY 环境变量以启用联网搜索]"
     
     async def execute(self, state: SupervisorState) -> Dict[str, Any]:
-        """執行研究任務"""
+        """执行研究任务"""
         self.log_start("🔍")
         
         query = self.get_query(state)
         if not query:
-            return self._create_response("沒有收到需要研究的問題。", state)
+            return self._create_response("没有收到需要研究的问题。", state)
         
         try:
-            # 執行搜索
+            # 执行搜索
             search_results = await self._web_search(query)
             
-            # 使用 LLM 分析搜索結果
+            # 使用 LLM 分析搜索结果
             system_prompt = get_prompt("workers.researcher.system")
             human_prompt = get_prompt("workers.researcher.human")
             
@@ -160,42 +160,42 @@ class ResearcherWorker(BaseWorker):
                 state=state,
                 thinking_step=create_thinking_step(
                     step_type="reasoning",
-                    content="完成搜索和分析任務",
+                    content="完成搜索和分析任务",
                     worker=self.name,
                 ),
             )
             
         except Exception as e:
-            logger.error(f"[{self.name}] 執行失敗: {e}", exc_info=True)
+            logger.error(f"[{self.name}] 执行失败: {e}", exc_info=True)
             return self.create_error_response(
                 worker_name=self.name,
-                error_message=f"研究任務執行失敗: {str(e)}",
+                error_message=f"研究任务执行失败: {str(e)}",
                 state=state,
             )
 
 
 class DataAnalystWorker(BaseWorker):
     """
-    數據分析專家 Worker
+    数据分析专家 Worker
     
-    負責數據查詢和分析。
+    负责数据查询和分析。
     """
     
     def __init__(self):
         super().__init__(
             name="DataAnalyst",
-            description="數據分析專家，擅長查詢業務數據庫、分析銷售/庫存/用戶等業務數據趨勢、生成數據報告。【注意】不負責回答當前日期、時間等系統信息問題，這類問題請交給 General。",
+            description="数据分析专家，擅长查询业务数据库、分析销售/库存/用户等业务数据趋势、生成数据报告。【注意】不负责回答当前日期、时间等系统信息问题，这类问题请交给 General。",
             priority=10,
             default_temperature=0.1,
         )
     
     async def execute(self, state: SupervisorState) -> Dict[str, Any]:
-        """執行數據分析任務"""
+        """执行数据分析任务"""
         self.log_start("📊")
         
         query = self.get_query(state)
         if not query:
-            return self._create_response("沒有收到需要分析的數據問題。", state)
+            return self._create_response("没有收到需要分析的数据问题。", state)
         
         try:
             system_prompt = get_prompt("workers.data_analyst.system")
@@ -221,37 +221,37 @@ class DataAnalystWorker(BaseWorker):
                 state=state,
                 thinking_step=create_thinking_step(
                     step_type="reasoning",
-                    content="完成數據分析任務",
+                    content="完成数据分析任务",
                     worker=self.name,
                 ),
             )
             
         except Exception as e:
-            logger.error(f"[{self.name}] 執行失敗: {e}", exc_info=True)
+            logger.error(f"[{self.name}] 执行失败: {e}", exc_info=True)
             return self.create_error_response(
                 worker_name=self.name,
-                error_message=f"數據分析任務執行失敗: {str(e)}",
+                error_message=f"数据分析任务执行失败: {str(e)}",
                 state=state,
             )
 
 
 class WriterWorker(BaseWorker):
     """
-    文案專家 Worker
+    文案专家 Worker
     
-    負責撰寫和總結，可以整合其他 Worker 的結果生成最終報告。
+    负责撰写和总结，可以整合其他 Worker 的结果生成最终报告。
     """
     
     def __init__(self):
         super().__init__(
             name="Writer",
-            description="文案專家，擅長撰寫報告、總結信息、整理文檔。可以整合多個來源的信息，根據用戶語氣偏好生成結構化的最終輸出（Markdown/表格）。",
+            description="文案专家，擅长撰写报告、总结信息、整理文档。可以整合多个来源的信息，根据用户语气偏好生成结构化的最终输出（Markdown/表格）。",
             priority=5,
             default_temperature=0.7,
         )
     
     async def execute(self, state: SupervisorState) -> Dict[str, Any]:
-        """執行文案撰寫任務"""
+        """执行文案撰写任务"""
         self.log_start("✍️")
         
         messages = state.get("messages", [])
@@ -261,14 +261,14 @@ class WriterWorker(BaseWorker):
         language = user_context.get("language", "zh-CN")
         
         if not worker_outputs and not original_query:
-            return self._create_response("沒有可用的信息來撰寫內容。", state)
+            return self._create_response("没有可用的信息来撰写内容。", state)
         
         try:
-            # 準備上下文信息
+            # 准备上下文信息
             context_info = ""
             if worker_outputs:
                 context_info = "\n\n".join([
-                    f"### {output['name']} 的輸出：\n{output['content']}"
+                    f"### {output['name']} 的输出：\n{output['content']}"
                     for output in worker_outputs
                 ])
             
@@ -283,9 +283,9 @@ class WriterWorker(BaseWorker):
             llm = self.get_llm(state)
             chain = prompt | llm
             result = await chain.ainvoke({
-                "query": original_query or "整合現有信息",
+                "query": original_query or "整合现有信息",
                 "task_hint": self.get_task_hint(state),
-                "context": context_info or "無額外信息",
+                "context": context_info or "无额外信息",
                 "language": "中文" if "zh" in language else "English",
             })
             
@@ -297,16 +297,16 @@ class WriterWorker(BaseWorker):
                 state=state,
                 thinking_step=create_thinking_step(
                     step_type="reasoning",
-                    content=f"完成文案撰寫任務，整合了 {len(worker_outputs)} 個信息源",
+                    content=f"完成文案撰写任务，整合了 {len(worker_outputs)} 个信息源",
                     worker=self.name,
                 ),
             )
             
         except Exception as e:
-            logger.error(f"[{self.name}] 執行失敗: {e}", exc_info=True)
+            logger.error(f"[{self.name}] 执行失败: {e}", exc_info=True)
             return self.create_error_response(
                 worker_name=self.name,
-                error_message=f"文案撰寫任務執行失敗: {str(e)}",
+                error_message=f"文案撰写任务执行失败: {str(e)}",
                 state=state,
             )
 
@@ -315,12 +315,12 @@ class GeneralWorker(BaseWorker):
     """
     通用 Worker
     
-    處理一般性的對話和任務。
-    支持 Function Calling 來獲取實時信息（如當前時間）。
-    如果模型不支持 tools，會自動降級到直接注入時間的方式。
+    处理一般性的对话和任务。
+    支持 Function Calling 来获取实时信息（如当前时间）。
+    如果模型不支持 tools，会自动降级到直接注入时间的方式。
     """
     
-    # 工具執行器映射
+    # 工具执行器映射
     TOOL_EXECUTORS = {
         "get_current_datetime": lambda params: get_datetime_tool().invoke(params),
     }
@@ -328,31 +328,31 @@ class GeneralWorker(BaseWorker):
     def __init__(self):
         super().__init__(
             name="General",
-            description="通用助手，可以處理各種一般性的對話和任務。【重要】負責回答關於當前日期、時間、星期幾等時間相關問題。也適合處理簡單問答、閒聊、身份介紹等場景。",
+            description="通用助手，可以处理各种一般性的对话和任务。【重要】负责回答关于当前日期、时间、星期几等时间相关问题。也适合处理简单问答、闲聊、身份介绍等场景。",
             priority=1,
             default_temperature=0.5,
         )
         self._tools_supported = True
     
     def _get_tools(self) -> List[Dict[str, Any]]:
-        """獲取 LangChain 格式的工具定義"""
+        """获取 LangChain 格式的工具定义"""
         try:
             return get_tools_for_langchain(["get_current_datetime"])
         except Exception as e:
-            logger.warning(f"[{self.name}] 獲取工具定義失敗: {e}")
+            logger.warning(f"[{self.name}] 获取工具定义失败: {e}")
             return []
     
     def _get_current_datetime_info(self, timezone: str = "Asia/Shanghai") -> str:
-        """直接獲取當前時間信息（降級方案）"""
+        """直接获取当前时间信息（降级方案）"""
         tool = get_datetime_tool(timezone)
         response = tool.get_datetime(timezone)
-        return f"今天是 {response.date} {response.weekday}，現在時間是 {response.time}（{response.timezone}）"
+        return f"今天是 {response.date} {response.weekday}，现在时间是 {response.time}（{response.timezone}）"
     
     async def _execute_tool(self, tool_name: str, tool_args: Dict[str, Any]) -> str:
-        """執行工具調用"""
+        """执行工具调用"""
         executor = self.TOOL_EXECUTORS.get(tool_name)
         if executor:
-            logger.info(f"🔧 [{self.name}] 調用工具: {tool_name}")
+            logger.info(f"🔧 [{self.name}] 调用工具: {tool_name}")
             return executor(tool_args)
         return f"未知工具: {tool_name}"
     
@@ -365,7 +365,7 @@ class GeneralWorker(BaseWorker):
         language: str,
         system_prompt: str,
     ) -> str:
-        """使用 Function Calling 執行"""
+        """使用 Function Calling 执行"""
         tools = self._get_tools()
         if not tools:
             raise ValueError("No tools available")
@@ -379,9 +379,9 @@ class GeneralWorker(BaseWorker):
             "language": language,
         })
         
-        # 處理工具調用
+        # 处理工具调用
         if hasattr(result, 'tool_calls') and result.tool_calls:
-            logger.info(f"[{self.name}] LLM 請求調用 {len(result.tool_calls)} 個工具")
+            logger.info(f"[{self.name}] LLM 请求调用 {len(result.tool_calls)} 个工具")
             
             tool_results = []
             for tool_call in result.tool_calls:
@@ -390,7 +390,7 @@ class GeneralWorker(BaseWorker):
                 tool_result = await self._execute_tool(tool_name, tool_args)
                 tool_results.append({"tool": tool_name, "result": tool_result})
             
-            # 構建包含工具結果的消息
+            # 构建包含工具结果的消息
             from langchain_core.messages import ToolMessage
             
             tool_messages = []
@@ -400,7 +400,7 @@ class GeneralWorker(BaseWorker):
                     tool_call_id=tool_call.get("id", f"tool_{i}"),
                 ))
             
-            # 第二次調用
+            # 第二次调用
             final_prompt = ChatPromptTemplate.from_messages([
                 ("system", system_prompt),
                 MessagesPlaceholder(variable_name="history"),
@@ -428,8 +428,8 @@ class GeneralWorker(BaseWorker):
         language: str,
         timezone: str,
     ) -> str:
-        """不使用 Function Calling 執行（降級方案）"""
-        logger.info(f"[{self.name}] 使用降級方案（直接注入時間信息）")
+        """不使用 Function Calling 执行（降级方案）"""
+        logger.info(f"[{self.name}] 使用降级方案（直接注入时间信息）")
         
         datetime_info = self._get_current_datetime_info(timezone)
         system_prompt = get_prompt(
@@ -454,7 +454,7 @@ class GeneralWorker(BaseWorker):
         return result.content if hasattr(result, 'content') else str(result)
     
     async def execute(self, state: SupervisorState) -> Dict[str, Any]:
-        """執行通用任務"""
+        """执行通用任务"""
         self.log_start("💬")
         
         query = self.get_query(state)
@@ -477,10 +477,12 @@ class GeneralWorker(BaseWorker):
             
             llm = self.get_llm(state)
             
-            # 嘗試使用 Function Calling
+            # 尝试使用 Function Calling
             if self._tools_supported:
                 try:
-                    system_prompt = get_prompt("workers.general.system", language="{language}")
+                    # 注意：这里必须传入实际的 language 值，否则 config.yaml 中的 {language}
+                    # 会保留为占位符，影响模型遵循语言/风格约束。
+                    system_prompt = get_prompt("workers.general.system", language=language_text)
                     prompt = ChatPromptTemplate.from_messages([
                         ("system", system_prompt),
                         MessagesPlaceholder(variable_name="history"),
@@ -498,7 +500,7 @@ class GeneralWorker(BaseWorker):
                 except Exception as e:
                     error_msg = str(e).lower()
                     if "does not support tools" in error_msg or ("tool" in error_msg and "support" in error_msg):
-                        logger.warning(f"[{self.name}] 模型不支持 tools，切換到降級方案")
+                        logger.warning(f"[{self.name}] 模型不支持 tools，切换到降级方案")
                         self._tools_supported = False
                         content = await self._execute_without_tools(
                             llm=llm,
@@ -525,15 +527,15 @@ class GeneralWorker(BaseWorker):
             )
             
         except Exception as e:
-            logger.error(f"[{self.name}] 執行失敗: {e}", exc_info=True)
+            logger.error(f"[{self.name}] 执行失败: {e}", exc_info=True)
             return self.create_error_response(
                 worker_name=self.name,
-                error_message=f"處理請求時出現問題: {str(e)}",
+                error_message=f"处理请求时出现问题: {str(e)}",
                 state=state,
             )
 
 
-# Worker 類映射
+# Worker 类映射
 WORKER_CLASSES = {
     "Researcher": ResearcherWorker,
     "DataAnalyst": DataAnalystWorker,
@@ -543,16 +545,16 @@ WORKER_CLASSES = {
 
 
 def register_default_workers() -> None:
-    """註冊所有默認的 Worker"""
+    """注册所有默认的 Worker"""
     from src.router.agents.supervisor.registry import register_worker, get_registry
     
     registry = get_registry()
     
     if not registry.is_empty():
-        logger.info("Workers 已註冊，跳過重複註冊")
+        logger.info("Workers 已注册，跳过重复注册")
         return
     
     for worker_class in WORKER_CLASSES.values():
         register_worker(worker_class())
     
-    logger.info(f"已註冊 {len(WORKER_CLASSES)} 個默認 Worker")
+    logger.info(f"已注册 {len(WORKER_CLASSES)} 个默认 Worker")

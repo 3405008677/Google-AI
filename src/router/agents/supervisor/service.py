@@ -30,37 +30,37 @@ from src.server.logging_setup import logger
 
 class StreamEventType(str, Enum):
     """
-    流式事件类型（極簡版）
+    流式事件类型（极简版）
     
-    只關注重要內容，不暴露內部處理細節
+    只关注重要内容，不暴露内部处理细节
     """
-    START = "start"          # 開始處理
-    PROGRESS = "progress"    # 處理進度（可選）
-    ANSWER = "answer"        # 答案/結果
+    START = "start"          # 开始处理
+    PROGRESS = "progress"    # 处理进度（可选）
+    ANSWER = "answer"        # 答案/结果
     DONE = "done"            # 完成
-    ERROR = "error"          # 錯誤
+    ERROR = "error"          # 错误
 
 
 @dataclass
 class StreamEvent:
     """
-    流式事件（極簡版）
+    流式事件（极简版）
     
-    只返回用戶關心的內容：
-    - type: 事件類型
-    - content: 內容（可選）
-    - progress: 進度（可選）
+    只返回用户关心的内容：
+    - type: 事件类型
+    - content: 内容（可选）
+    - progress: 进度（可选）
     """
     type: StreamEventType
-    content: str = ""                                # 內容
+    content: str = ""                                # 内容
     progress: Optional[Dict[str, int]] = None        # {"current": x, "total": y}
     
     def to_dict(self) -> Dict[str, Any]:
         """
-        轉換為字典
+        转换为字典
         
         返回格式示例：
-        {"type": "answer", "content": "這是答案..."}
+        {"type": "answer", "content": "这是答案..."}
         {"type": "progress", "progress": {"current": 1, "total": 2}}
         {"type": "done"}
         """
@@ -76,7 +76,7 @@ class StreamEvent:
         return result
     
     def to_sse(self) -> str:
-        """轉換為 SSE 格式"""
+        """转换为 SSE 格式"""
         data = json.dumps(self.to_dict(), ensure_ascii=False)
         return f"data: {data}\n\n"
 
@@ -177,30 +177,30 @@ class SupervisorService:
         prev_state: Optional[Dict[str, Any]] = None,
     ) -> List[StreamEvent]:
         """
-        解析節點輸出（極簡版）
+        解析节点输出（极简版）
         
-        只返回重要內容：
-        - 實際的答案/結果 (ANSWER)
-        - 進度更新 (PROGRESS) - 可選
+        只返回重要内容：
+        - 实际的答案/结果 (ANSWER)
+        - 进度更新 (PROGRESS) - 可选
         
         不返回：
-        - 誰在處理
-        - 內部決策過程
-        - 任務規劃細節
+        - 谁在处理
+        - 内部决策过程
+        - 任务规划细节
         """
         events = []
         
-        # 計算進度（可選）
+        # 计算进度（可选）
         task_plan = node_output.get("task_plan", prev_state.get("task_plan", []) if prev_state else [])
         progress = None
         if task_plan:
             from src.router.agents.supervisor.state import TaskStatus
             completed = sum(1 for step in task_plan if step.get("status") in [TaskStatus.COMPLETED, TaskStatus.SKIPPED])
             total = len(task_plan)
-            if total > 1:  # 只有多步驟任務才顯示進度
+            if total > 1:  # 只有多步骤任务才显示进度
                 progress = {"current": completed, "total": total}
         
-        # 只關注 Worker 輸出的實際內容
+        # 只关注 Worker 输出的实际内容
         if "messages" in node_output and node_name != "supervisor":
             messages = node_output.get("messages", [])
             if messages:
@@ -211,14 +211,14 @@ class SupervisorService:
                     else str(last_message)
                 )
                 
-                # 發送答案
+                # 发送答案
                 events.append(StreamEvent(
                     type=StreamEventType.ANSWER,
                     content=content,
                     progress=progress,
                 ))
         
-        # 多步驟任務：發送進度更新（不含內容）
+        # 多步骤任务：发送进度更新（不含内容）
         elif node_name == "supervisor" and progress and progress["current"] > 0:
             events.append(StreamEvent(
                 type=StreamEventType.PROGRESS,
@@ -309,15 +309,15 @@ class SupervisorService:
         Yields:
             事件字典或 SSE 格式字符串
         """
-        # 發送開始事件
+        # 发送开始事件
         start_event = StreamEvent(type=StreamEventType.START)
         yield start_event.to_sse() if sse_format else start_event.to_dict()
         
-        # 1. 檢查緩存
+        # 1. 检查缓存
         if self.performance_layer:
             cache_result = self.performance_layer.process_query(user_message)
             if cache_result:
-                # 直接發送答案
+                # 直接发送答案
                 answer_event = StreamEvent(
                     type=StreamEventType.ANSWER,
                     content=cache_result.get("answer"),
@@ -367,7 +367,7 @@ class SupervisorService:
             yield error_event.to_sse() if sse_format else error_event.to_dict()
             return
         
-        # 3. 緩存結果
+        # 3. 缓存结果
         if self.performance_layer and final_answer:
             self.performance_layer.cache_answer(user_message, final_answer)
         

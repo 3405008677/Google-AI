@@ -22,6 +22,7 @@ import uuid
 from typing import Optional
 from fastapi import APIRouter, Request, HTTPException, Query, Depends
 from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi import Response
 from pydantic import BaseModel, Field
 
 from src.router.agents.supervisor import UserContext
@@ -108,6 +109,7 @@ def _build_user_context(request: ChatRequest, base_context: UserContext) -> User
 async def chat(
     request: ChatRequest,
     http_request: Request,
+    response: Response,
     service=Depends(get_supervisor_service_with_init_dep),
     base_context: UserContext = Depends(get_user_context_dep),
 ):
@@ -122,8 +124,22 @@ async def chat(
         service: Supervisor 服务（依赖注入）
         base_context: 基础用户上下文（依赖注入）
     """
-    thread_id = request.thread_id or f"thread-{uuid.uuid4().hex[:8]}"
+    # 会话连续性说明：
+    # - LangGraph 的对话历史是以 thread_id 作为 key 保存/读取
+    # - 若客户端每次都不传 thread_id，会被视为新会话，导致“看起来没有上下文”
+    # 这里提供 cookie 回退机制：未显式传 thread_id 时，优先沿用 cookie 中的 thread_id。
+    cookie_thread_id = http_request.cookies.get("thread_id")
+    thread_id = request.thread_id or cookie_thread_id or f"thread-{uuid.uuid4().hex[:8]}"
     user_context = _build_user_context(request, base_context)
+
+    # 把 thread_id 回写到 cookie，方便浏览器端自动续聊（非浏览器客户端仍建议显式传 thread_id）
+    if not request.thread_id:
+        response.set_cookie(
+            key="thread_id",
+            value=thread_id,
+            httponly=True,
+            samesite="lax",
+        )
 
     try:
         result = await service.run(
@@ -183,7 +199,8 @@ async def chat_stream(
         service: Supervisor 服务（依赖注入）
         base_context: 基础用户上下文（依赖注入）
     """
-    thread_id = request.thread_id or f"thread-{uuid.uuid4().hex[:8]}"
+    cookie_thread_id = http_request.cookies.get("thread_id")
+    thread_id = request.thread_id or cookie_thread_id or f"thread-{uuid.uuid4().hex[:8]}"
     user_context = _build_user_context(request, base_context)
 
     async def generate():
@@ -206,7 +223,7 @@ async def chat_stream(
             }
             yield f"data: {json.dumps(error_event, ensure_ascii=False)}\n\n"
 
-    return StreamingResponse(
+    streaming_response = StreamingResponse(
         generate(),
         media_type="text/event-stream",
         headers={
@@ -215,6 +232,17 @@ async def chat_stream(
             "X-Accel-Buffering": "no",  # 禁用 Nginx 缓冲
         },
     )
+
+    # SSE 也回写 cookie，确保下一次请求能续用同一 thread_id
+    if not request.thread_id:
+        streaming_response.set_cookie(
+            key="thread_id",
+            value=thread_id,
+            httponly=True,
+            samesite="lax",
+        )
+
+    return streaming_response
 
 
 @router.get("/chat/history/{thread_id}")

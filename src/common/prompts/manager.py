@@ -1,8 +1,8 @@
 """
-提示詞管理器
+提示词管理器
 
-提供線程安全的提示詞加載和訪問。
-支持 YAML 配置文件和熱加載。
+提供线程安全的提示词加载和访问。
+支持 YAML 配置文件和热加载。
 """
 
 import yaml
@@ -15,9 +15,9 @@ from src.server.logging_setup import logger
 
 class SafeDict(dict):
     """
-    安全字典，用於 format_map
+    安全字典，用于 format_map
     
-    未提供的 key 會返回原始佔位符 {key}
+    未提供的 key 会返回原始占位符 {key}
     """
     def __missing__(self, key: str) -> str:
         return "{" + key + "}"
@@ -25,16 +25,16 @@ class SafeDict(dict):
 
 class PromptManager:
     """
-    提示詞管理器
+    提示词管理器
     
-    線程安全的單例模式，管理所有提示詞配置。
+    线程安全的单例模式，管理所有提示词配置。
     """
     
     _instance: Optional["PromptManager"] = None
     _lock = threading.Lock()
     
     def __new__(cls, config_path: Optional[Path] = None):
-        """單例模式"""
+        """单例模式"""
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
@@ -45,10 +45,10 @@ class PromptManager:
     
     def __init__(self, config_path: Optional[Path] = None):
         """
-        初始化提示詞管理器
+        初始化提示词管理器
         
         Args:
-            config_path: 配置文件路徑，默認為 src/common/prompts/config.yaml
+            config_path: 配置文件路径，默认为 src/common/prompts/config.yaml
         """
         if self._initialized:
             return
@@ -63,58 +63,58 @@ class PromptManager:
     
     def _load(self) -> None:
         """
-        加載配置文件
+        加载配置文件
         
-        線程安全的配置加載。
+        线程安全的配置加载。
         """
         with self._load_lock:
             try:
                 if not self.config_path.exists():
-                    logger.warning(f"提示詞配置文件不存在: {self.config_path}")
+                    logger.warning(f"提示词配置文件不存在: {self.config_path}")
                     self._cache = {}
                     return
                 
                 with open(self.config_path, 'r', encoding='utf-8') as f:
                     self._cache = yaml.safe_load(f) or {}
                 
-                logger.debug(f"提示詞配置已加載，包含 {len(self._cache)} 個頂級配置項")
+                logger.debug(f"提示词配置已加载，包含 {len(self._cache)} 个顶级配置项")
                 
             except yaml.YAMLError as e:
-                logger.error(f"提示詞配置文件格式錯誤: {e}")
+                logger.error(f"提示词配置文件格式错误: {e}")
                 self._cache = {}
             except Exception as e:
-                logger.error(f"加載提示詞配置失敗: {e}")
+                logger.error(f"加载提示词配置失败: {e}")
                 self._cache = {}
     
     def reload(self) -> bool:
         """
-        熱加載配置文件
+        热加载配置文件
         
         Returns:
-            是否加載成功
+            是否加载成功
         """
         try:
             self._load()
-            logger.info("🔄 提示詞配置已重新加載")
+            logger.info("🔄 提示词配置已重新加载")
             return True
         except Exception as e:
-            logger.error(f"重新加載提示詞配置失敗: {e}")
+            logger.error(f"重新加载提示词配置失败: {e}")
             return False
     
     def get(self, key: str, default: str = "", **format_kwargs) -> str:
         """
-        獲取提示詞
+        获取提示词
         
-        支持點號路徑訪問，如 "workers.researcher.system"
-        支持模板變量替換，如 {worker_list}
+        支持点号路径访问，如 "workers.researcher.system"
+        支持模板变量替换，如 {worker_list}
         
         Args:
-            key: 提示詞路徑，使用點號分隔
-            default: 默認值（當路徑不存在時返回）
-            **format_kwargs: 模板變量（可選）
+            key: 提示词路径，使用点号分隔
+            default: 默认值（当路径不存在时返回）
+            **format_kwargs: 模板变量（可选）
             
         Returns:
-            提示詞內容
+            提示词内容
         """
         keys = key.split(".")
         value: Any = self._cache
@@ -130,24 +130,24 @@ class PromptManager:
         if not isinstance(value, str):
             return default
         
-        # 如果有模板變量，進行替換
+        # 如果有模板变量，进行替换
         if format_kwargs:
             try:
                 value = value.format_map(SafeDict(format_kwargs))
             except Exception as e:
-                logger.warning(f"提示詞模板替換失敗 [{key}]: {e}")
+                logger.warning(f"提示词模板替换失败 [{key}]: {e}")
         
         return value
     
     def get_section(self, key: str) -> Dict[str, Any]:
         """
-        獲取配置的一個部分（字典）
+        获取配置的一个部分（字典）
         
         Args:
-            key: 配置路徑
+            key: 配置路径
             
         Returns:
-            配置字典，如果不存在則返回空字典
+            配置字典，如果不存在则返回空字典
         """
         keys = key.split(".")
         value: Any = self._cache
@@ -164,10 +164,10 @@ class PromptManager:
     
     def has(self, key: str) -> bool:
         """
-        檢查提示詞是否存在
+        检查提示词是否存在
         
         Args:
-            key: 提示詞路徑
+            key: 提示词路径
             
         Returns:
             是否存在
@@ -185,13 +185,13 @@ class PromptManager:
     
     def list_keys(self, prefix: str = "") -> List[str]:
         """
-        列出所有可用的提示詞路徑
+        列出所有可用的提示词路径
         
         Args:
-            prefix: 路徑前綴過濾
+            prefix: 路径前缀过滤
             
         Returns:
-            提示詞路徑列表
+            提示词路径列表
         """
         def _collect_keys(d: Dict, parent: str = "") -> List[str]:
             keys = []
@@ -210,17 +210,17 @@ class PromptManager:
         return all_keys
 
 
-# === 模組級便捷函數 ===
+# === 模组级便捷函数 ===
 
 _manager_instance: Optional[PromptManager] = None
 
 
 def get_prompt_manager() -> PromptManager:
     """
-    獲取提示詞管理器實例（單例）
+    获取提示词管理器实例（单例）
     
     Returns:
-        PromptManager 實例
+        PromptManager 实例
     """
     global _manager_instance
     if _manager_instance is None:
@@ -230,22 +230,22 @@ def get_prompt_manager() -> PromptManager:
 
 def get_prompt(key: str, default: str = "", **format_kwargs) -> str:
     """
-    獲取提示詞（便捷函數）
+    获取提示词（便捷函数）
     
     Args:
-        key: 提示詞路徑，如 "workers.researcher.system"
-        default: 默認值
-        **format_kwargs: 模板變量
+        key: 提示词路径，如 "workers.researcher.system"
+        default: 默认值
+        **format_kwargs: 模板变量
         
     Returns:
-        提示詞內容
+        提示词内容
     """
     return get_prompt_manager().get(key, default, **format_kwargs)
 
 
 def reload_prompts() -> bool:
     """
-    重新加載提示詞配置（熱加載）
+    重新加载提示词配置（热加载）
     
     Returns:
         是否成功
@@ -255,23 +255,23 @@ def reload_prompts() -> bool:
 
 def list_prompts(prefix: str = "") -> List[str]:
     """
-    列出所有可用的提示詞路徑
+    列出所有可用的提示词路径
     
     Args:
-        prefix: 路徑前綴過濾，如 "workers"
+        prefix: 路径前缀过滤，如 "workers"
         
     Returns:
-        提示詞路徑列表
+        提示词路径列表
     """
     return get_prompt_manager().list_keys(prefix)
 
 
 def has_prompt(key: str) -> bool:
     """
-    檢查提示詞是否存在
+    检查提示词是否存在
     
     Args:
-        key: 提示詞路徑
+        key: 提示词路径
         
     Returns:
         是否存在

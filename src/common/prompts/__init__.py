@@ -1,27 +1,27 @@
 """
-統一提示詞管理模組
+统一提示词管理模组
 
-提供集中化的提示詞管理，支持：
-1. YAML 配置文件存儲
-2. 點號路徑訪問 (如 "supervisor.planning")
-3. 熱加載（不重啟服務更新配置）
-4. 模板變量支持
-5. 分類管理（supervisor、workers、system 等）
+提供集中化的提示词管理，支持：
+1. YAML 配置文件存储
+2. 点号路径访问 (如 "supervisor.planning")
+3. 热加载（不重启服务更新配置）
+4. 模板变量支持
+5. 分类管理（supervisor、workers、system 等）
 
 使用方式：
     from src.common.prompts import get_prompt, reload_prompts
     
-    # 獲取提示詞
+    # 获取提示词
     prompt = get_prompt("supervisor.planning")
     
-    # 帶模板變量
+    # 带模板变量
     prompt = get_prompt(
         "supervisor.planning",
         worker_list="...",
         max_steps=8
     )
     
-    # 熱加載
+    # 热加载
     reload_prompts()
 """
 
