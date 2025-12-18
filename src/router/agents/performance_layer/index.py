@@ -14,6 +14,7 @@ import json
 import hashlib
 from typing import Optional, Dict, Any, List, Tuple
 from src.server.logging_setup import logger
+from src.common.prompts import get_prompt_manager
 
 # 这个模组会被服务层「可选」导入；因此任何重依赖都必须是可选的，
 # 否则会导致整个 Performance Layer 被禁用（连 RuleEngine 也用不了）。
@@ -304,18 +305,55 @@ class RuleEngine:
         self._load_default_rules()
 
     def _load_default_rules(self):
-        """加载默认规则"""
-        default_rules = [
-            # (pattern, answer, rule_type)
-            (r"^(你好|hello|hi|您好|早上好|下午好|晚上好)[\s!！。，,]*$", "你好！我是 AI 助手，有什么可以帮助你的吗？", "greeting"),
-            (r"^(你是谁|你叫什么|介绍.*自己|what.*your.*name|who.*are.*you)[\s!！。，,]*$", "我是一个 AI 助手，可以帮助你回答问题、处理任务等。", "identity"),
-            (r"^(清除.*历史|清空.*历史|删除.*历史|clear.*history|reset.*history)[\s!！。，,]*$", "好的，已清除历史记录。", "clear_history"),
-            (r"^(谢谢|感谢|thank.*you|thanks)[\s!！。，,]*$", "不客气！很高兴能帮助你。", "thanks"),
-            (r"^(再见|拜拜|bye|goodbye|see.*you)[\s!！。，,]*$", "再见！祝你一切顺利。", "goodbye"),
-            (r"^(帮助|help|如何使用|怎么用)[\s!！。，,]*$", "我可以帮助你回答问题、处理任务等。请告诉我你需要什么帮助。", "help"),
+        """
+        从 YAML 配置文件加载规则
+        
+        配置文件路径: src/common/prompts/rules.yaml
+        支持多个规则组: default, business 等
+        """
+        try:
+            prompt_manager = get_prompt_manager()
+            
+            # 加载所有规则组
+            rule_groups = ["default", "business"]
+            loaded_count = 0
+            
+            for group in rule_groups:
+                rules_config = prompt_manager.get_section(f"rules.{group}")
+                
+                if not rules_config:
+                    continue
+                
+                # rules_config 是一个列表
+                if isinstance(rules_config, list):
+                    for rule in rules_config:
+                        if isinstance(rule, dict):
+                            pattern = rule.get("pattern", "")
+                            answer = rule.get("answer", "")
+                            rule_type = rule.get("type", "custom")
+                            
+                            if pattern and answer:
+                                self.add_rule(pattern, answer.strip(), rule_type)
+                                loaded_count += 1
+            
+            if loaded_count > 0:
+                logger.info(f"规则引擎：从 YAML 加载了 {loaded_count} 条规则")
+            else:
+                logger.warning("规则引擎：未从 YAML 加载到任何规则，使用内置默认规则")
+                self._load_fallback_rules()
+                
+        except Exception as e:
+            logger.warning(f"规则引擎：加载 YAML 规则失败，使用内置默认规则: {e}")
+            self._load_fallback_rules()
+    
+    def _load_fallback_rules(self):
+        """加载内置默认规则（作为降级方案）"""
+        fallback_rules = [
+            (r"^(你好|hello|hi|您好)[\\s!！。，,]*$", "你好！有什么可以帮助您的？", "greeting"),
+            (r"^(你是谁|你叫什么)[\\s!！。，,?？]*$", "我是 GG后台系统助手。", "identity"),
+            (r"^(谢谢|感谢|thanks)[\\s!！。，,]*$", "不客气！", "thanks"),
         ]
-
-        for pattern, answer, rule_type in default_rules:
+        for pattern, answer, rule_type in fallback_rules:
             self.add_rule(pattern, answer, rule_type)
 
     def add_rule(self, pattern: str, answer: str, rule_type: str = "custom"):

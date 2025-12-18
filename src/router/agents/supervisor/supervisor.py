@@ -88,22 +88,22 @@ class SupervisorConfig:
         pass
 
 
-# 提示词现在从配置文件读取：src/common/prompts/config.yaml
-# 使用 get_prompt("supervisor.planning") 和 get_prompt("supervisor.routing") 获取
+# 提示词从配置文件读取：src/common/prompts/supervisor/
+# 使用 get_prompt("supervisor.planning.system") 和 get_prompt("supervisor.routing.system") 获取
 
 
 def _build_planning_prompt(worker_list: str, max_steps: int) -> ChatPromptTemplate:
     """构建任务规划 Prompt（从配置文件读取）"""
     # 从配置文件获取提示词，支持模板变量
     system_prompt = get_prompt(
-        "supervisor.planning",
+        "supervisor.planning.system",
         worker_list=worker_list,
         max_steps=max_steps,
     )
     
     # 获取规划完成提示词
     planning_complete = get_prompt(
-        "supervisor.planning_complete",
+        "supervisor.planning.output.complete",
         default='请分析用户的请求，制定一个执行计划。返回 JSON 格式：{{"steps": [{{"worker": "专家名称", "description": "任务描述"}}], "reasoning": "规划理由"}}'
     )
     
@@ -124,7 +124,7 @@ def _build_routing_prompt(
     """构建路由决策 Prompt（从配置文件读取）"""
     # 从配置文件获取提示词，支持模板变量
     system_prompt = get_prompt(
-        "supervisor.routing",
+        "supervisor.routing.system",
         worker_list=worker_list,
         worker_options=', '.join(worker_names),
         task_plan=task_plan,
@@ -134,7 +134,7 @@ def _build_routing_prompt(
     
     # 获取路由决策提示词
     routing_decision = get_prompt(
-        "supervisor.routing_decision",
+        "supervisor.routing.output.complete",
         default="根据以上对话历史和任务进度，请做出你的决策：下一步交给哪个专家？或者任务是否已经完成？"
     )
     

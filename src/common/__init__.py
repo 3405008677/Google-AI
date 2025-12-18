@@ -20,7 +20,7 @@
 使用方式：
     # 获取提示词
     from src.common.prompts import get_prompt
-    prompt = get_prompt("supervisor.planning", worker_list="...", max_steps=8)
+    prompt = get_prompt("supervisor.planning.system", worker_list="...", max_steps=8)
     
     # 获取工具定义
     from src.common.function_calls import get_tool, get_tools
