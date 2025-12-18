@@ -1,302 +1,920 @@
-# Google-AI
+# Google-AI Project
 
-> 一个可扩展的 AI Web 服务：支持多模型（Gemini / Qwen / 自定义 OpenAI 兼容接口）、Supervisor/Worker 任务编排（LangGraph）、性能优化层（规则引擎 + 语义缓存）、以及面向生产的路由中间件（追踪/限流/认证）与可观测性（日志/健康检查/指标）。
+> **企业级 AI 服务工程化解决方案**
+>
+> 基于 LangGraph Supervisor/Worker 架构，集成语义缓存、规则引擎、Function Calling 工具体系，以及完整的生产级服务治理能力。
 
 ---
 
-## 1. 项目定位与目标
+## 目录
 
-### 1.1 这个项目解决什么问题？
-当你希望把“多个大模型能力 + 工具调用 + 复杂任务拆解 + API 服务化”组合成一个可部署、可扩展、可治理的服务时，常见痛点包括：
+- [1. 项目定位](#1-项目定位)
+- [2. 为什么选择这个架构](#2-为什么选择这个架构)
+- [3. 架构深度解析](#3-架构深度解析)
+- [4. 完整请求流程](#4-完整请求流程)
+- [5. 与其他架构的对比](#5-与其他架构的对比)
+- [6. 核心模块详解](#6-核心模块详解)
+- [7. 快速开始](#7-快速开始)
+- [8. 配置详解](#8-配置详解)
+- [9. 开发指南](#9-开发指南)
+- [10. 生产环境建议](#10-生产环境建议)
 
-- **多模型接入碎片化**：不同供应商 SDK、鉴权方式、接口形态各异。
-- **复杂任务需要编排**：一次请求往往不是一句 prompt 就能解决，需要拆解、规划、调用工具、聚合结果。
-- **成本与延迟不可控**：重复问题重复调用昂贵的 LLM，导致费用和延迟暴涨。
-- **缺少治理能力**：缺少认证、限流、追踪、健康检查，难以进入生产环境。
+---
 
-本项目的目标是提供一个“工程化”的骨架：
-- **对外**是稳定的 HTTP API（FastAPI），可观测、可控。
-- **对内**是可插拔的模型路由、Agent/Supervisor 编排、工具体系与性能层。
+## 1. 项目定位
+
+### 1.1 解决什么问题？
+
+在将 LLM 能力服务化的过程中，开发者常面临以下挑战：
+
+| 痛点 | 具体表现 | 本项目解决方案 |
+|:---|:---|:---|
+| **复杂任务难以编排** | 单一 Prompt 无法处理"先搜索、再分析、最后生成报告"等多步骤任务 | LangGraph Supervisor/Worker 架构，自动拆解任务 |
+| **成本与延迟失控** | 简单问候、重复问题也调用 LLM，成本高、响应慢 | Performance Layer（规则引擎 + 语义缓存）实现"0 Token"速通 |
+| **服务治理缺失** | 无认证、无限流、无追踪，难以进入生产环境 | 完整中间件链：JWT 认证、滑动窗口限流、链路追踪 |
+| **模型切换成本高** | 不同供应商接口不一致，切换需要改代码 | 统一 LLM Factory，配置即切换 |
+| **工具管理混乱** | Function Calling 定义散落各处，难以维护 | YAML 驱动的 Tool Registry，集中管理 |
 
 ### 1.2 适用场景
-- 将 LLM 能力封装成内部服务（聊天、问答、任务型助手）。
-- 多步骤任务（检索 + 分析 + 报告）需要可视化进度（SSE 流式）。
-- 需要在调用 LLM 前做“便宜的判断”（规则命中、缓存命中）。
-- 需要 JWT 登录、限流、防刷、链路追踪等基础治理。
+
+- ✅ 构建企业内部 AI 中台服务
+- ✅ 需要多步骤任务编排的智能助手
+- ✅ 对成本敏感、需要缓存优化的高频问答场景
+- ✅ 需要完整服务治理的生产级部署
+- ✅ 需要支持多种 LLM（Gemini/Qwen/私有化部署）的项目
 
 ---
 
-## 2. 技术栈一览（框架与选型）
+## 2. 为什么选择这个架构
 
-### 2.1 Web 框架：FastAPI + Starlette
-- **选型原因**
-  - **异步优先**：天然适合高并发 I/O 场景（调用外部模型 API、搜索 API 等）。
-  - **类型标注友好**：配合 Pydantic，可快速获得可靠的请求/响应校验与 OpenAPI 文档。
-  - **依赖注入机制（Depends）**：使服务具备更好的可测试性与模块解耦。
-- **核心优势**
-  - 性能优秀（基于 Starlette/ASGI）。
-  - 自动生成交互式 API 文档（可在 debug 模式开启）。
-
-### 2.2 ASGI Server：Uvicorn
-- **选型原因**：成熟、轻量、社区使用广，启动配置简单。
-- **优势**：与 FastAPI/Starlette 生态契合；支持 HTTP/1.1、Websocket（本项目也引入 `websockets` 依赖）。
-
-### 2.3 数据与校验：Pydantic v2
-- **选型原因**：FastAPI 默认生态；用于 API 的请求/响应模型。
-- **优势**：更严格的数据校验与更好的类型表达能力；提升接口契约稳定性。
-
-### 2.4 配置管理：python-dotenv + dataclass 配置
-- **选型原因**：
-  - `.env` 是本地开发最通用的方式。
-  - dataclass 配置可读性强、类型更明确，利于校验与提示。
-- **优势**：
-  - 清晰的“环境变量 -> 配置对象”映射。
-  - 可在启动时做校验并输出友好警告。
-
-> 注意：项目里存在两套配置入口：`src/config.py` 与 `src/core/settings.py`，分别面向“应用启动”和“统一配置中心”。它们可以并存，也可后续统一到单一入口。
-
-### 2.5 Agent 编排：LangChain + LangGraph
-- **选型原因**
-  - **LangChain** 负责消息结构、工具协议等生态对接。
-  - **LangGraph** 适合把复杂任务拆成一个可执行的图（Graph），天然支持多节点/多步骤流程。
-- **优势**
-  - 编排逻辑更工程化：从“脚本式 if/else”升级为“可维护的状态机/工作流”。
-  - 更容易扩展 Worker、插入检查点、加入新的节点能力。
-
-### 2.6 性能层：Redis + sentence-transformers + 规则引擎
-- **语义缓存（Semantic Cache）**
-  - **选型原因**：Redis 部署简单、可扩展；sentence-transformers 提供文本向量化能力。
-  - **优势**：
-    - 对重复/相似问题做到“0 次 LLM 调用”，显著降低成本与延迟。
-    - 可通过阈值（`SEMANTIC_CACHE_THRESHOLD`）控制命中率与准确性。
-- **规则引擎（Rule Engine）**
-  - **选型原因**：对“问候/帮助/清理历史”等非推理类指令，不必调用 LLM。
-  - **优势**：更快、更便宜、更可控；减少幻觉与不确定输出。
-
-### 2.7 搜索能力：Tavily（可选）
-- **选型原因**：提供一套简单的 Web 搜索 API 接入。
-- **优势**：为需要联网检索的 Worker 提供工具能力。
-
-### 2.8 安全：JWT（PyJWT）+ bcrypt
-- **选型原因**
-  - JWT 易于在前后端间传递与扩展 claims。
-  - bcrypt 用于更可靠的密码哈希（本项目授权模块包含示例实现与安全提示）。
-- **优势**
-  - 可无状态扩展（多实例部署时仍需考虑 Token 黑名单的持久化方案）。
-
----
-
-## 3. 总体架构（从请求到响应）
-
-### 3.1 模块分层（高层视图）
+### 2.1 架构选型理念
 
 ```
-Client
-  |
-  v
-FastAPI App (src/server)
-  |
-  +--> Router System (src/router)
-  |      +--> Tracing / Auth / RateLimit Middlewares (src/router/utils)
-  |      +--> Health & Metrics (src/router/health.py)
-  |      +--> Authorization(JWT) (src/router/services/authorization)
-  |      +--> Agents API (src/router/agents/api.py)
-  |
-  +--> Agents Layer (src/router/agents)
-         +--> Performance Layer (rule engine + semantic cache)
-         +--> Supervisor (LangGraph workflow)
-         +--> Workers / Tools
-                 +--> Tools Registry (src/common/function_calls)
-                 +--> Prompt Manager (src/common/prompts)
+                    传统架构                          本项目架构
+                    
+    用户 ──→ LLM ──→ 响应               用户 ──→ 性能层 ──→ Supervisor ──→ Workers ──→ Tools
+                                              ↓                    ↓
+                                          规则/缓存命中         任务拆解+调度
+                                              ↓                    ↓
+                                          直接返回              多步骤执行
 ```
 
-### 3.2 一次典型请求的处理流程
-1. **Uvicorn 接收请求**（`src/server/server.py`）。
-2. **FastAPI app 组装**（`src/server/app.py`）：注册中间件、异常处理器、静态目录、（可选）加载路由。
-3. **路由层中间件链**（`src/router/index.py`）：
-   - 追踪（生成/透传 `X-Trace-ID`，记录耗时）
-   - 认证（检查 Authorization，写入 `request.state.auth_token`）
-   - 限流（滑动窗口，超限直接 429）
-4. **进入业务路由**：
-   - 健康检查/指标：`/health`、`/ready`、`/status`、`/metrics`
-   - 授权：`/auth/login`、`/auth/refresh`、`/auth/validate`、`/auth/logout`、`/auth/me`
-   - Agent：`/agents/chat`（非流式）或 `/agents/chat/stream`（SSE 流式）
-5. **（可选）性能层速通**：规则命中或语义缓存命中则直接返回。
-6. **进入 Supervisor 工作流**：将任务拆解为步骤并调度 Worker。
-7. **（流式模式）通过 SSE 实时推送事件**：开始/进度/答案/完成。
+#### 核心设计原则
+
+1. **"能不调 LLM 就不调"原则**
+   - 规则引擎处理问候、帮助等固定意图（< 1ms）
+   - 语义缓存处理相似问题（< 10ms）
+   - 只有真正需要推理的请求才进入 LLM
+
+2. **"分而治之"原则**
+   - 复杂任务由 Supervisor 拆解为多个步骤
+   - 每个步骤由专门的 Worker 执行
+   - Worker 可以是单步执行，也可以是嵌套子图
+
+3. **"动态路由"原则**
+   - 根据任务类型自动选择合适的 Worker
+   - 支持运行时动态注册新 Worker
+   - 失败时自动重试或切换策略
+
+### 2.2 为什么选择 LangGraph？
+
+| 对比维度 | 传统 Chain | ReAct Agent | **LangGraph Supervisor** |
+|:---|:---|:---|:---|
+| 任务拆解 | ❌ 不支持 | ⚠️ 隐式（依赖 LLM） | ✅ 显式规划（Task Plan） |
+| 流程控制 | 线性 | 循环 | **图结构（任意拓扑）** |
+| 可观测性 | 差 | 一般 | **优秀（节点级追踪）** |
+| 错误恢复 | 需手动 | 部分 | **内置自愈机制** |
+| 可扩展性 | 低 | 中 | **高（热插拔 Worker）** |
+| 嵌套能力 | ❌ | ❌ | ✅ 支持子图（Subgraph） |
+
+### 2.3 技术选型总结
+
+| 技术 | 选型 | 理由 |
+|:---|:---|:---|
+| Web 框架 | **FastAPI** | 异步原生、类型安全、自动文档 |
+| 编排引擎 | **LangGraph** | 图结构、状态管理、检查点支持 |
+| 缓存 | **Redis + sentence-transformers** | 成熟稳定、向量相似度检索 |
+| 认证 | **JWT** | 无状态、易扩展、标准协议 |
+| 配置 | **dataclass + dotenv** | 类型安全、IDE 友好 |
 
 ---
 
-## 4. 目录结构（根目录导览）
+## 3. 架构深度解析
 
-- `src/`：核心源码目录（内部还有更细的 README）。
-- `static/`：静态资源目录（默认挂载到 `/static`）。
-- `env.example`：环境变量示例（建议复制为 `.env`）。
-- `requirements.txt`：Python 依赖锁定。
+### 3.1 系统架构全景图
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                                    Client                                         │
+│                              (HTTP / SSE / WebSocket)                             │
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                              Router Layer (治理层)                                │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐        │
+│  │   Tracing   │───▶│    Auth     │───▶│ Rate Limit  │───▶│   Health    │        │
+│  │ (链路追踪)  │    │  (JWT认证)   │    │  (滑动窗口)  │    │  (探针/指标) │        │
+│  └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘        │
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                           Performance Layer (性能层)                              │
+│                                                                                   │
+│    ┌─────────────────┐              ┌─────────────────────────────────────┐      │
+│    │   Rule Engine   │   命中 ────▶ │         直接返回（< 1ms）            │      │
+│    │   (规则引擎)     │              └─────────────────────────────────────┘      │
+│    └────────┬────────┘                                                           │
+│             │ 未命中                                                              │
+│             ▼                                                                     │
+│    ┌─────────────────┐              ┌─────────────────────────────────────┐      │
+│    │ Semantic Cache  │   命中 ────▶ │      返回缓存答案（< 10ms）           │      │
+│    │   (语义缓存)     │              └─────────────────────────────────────┘      │
+│    └────────┬────────┘                                                           │
+│             │ 未命中                                                              │
+└─────────────┼────────────────────────────────────────────────────────────────────┘
+              │
+              ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                            Agent Core (编排层)                                    │
+│                                                                                   │
+│    ┌─────────────────────────────────────────────────────────────────────────┐   │
+│    │                         SupervisorService                                │   │
+│    │                                                                          │   │
+│    │   ┌───────────────────────────────────────────────────────────────┐     │   │
+│    │   │                   LangGraph Workflow                           │     │   │
+│    │   │                                                                │     │   │
+│    │   │     ┌────────────┐         ┌────────────┐                      │     │   │
+│    │   │     │ Supervisor │◀───────▶│  Planner   │                      │     │   │
+│    │   │     │  (决策中枢) │         │ (任务规划)  │                      │     │   │
+│    │   │     └─────┬──────┘         └────────────┘                      │     │   │
+│    │   │           │                                                    │     │   │
+│    │   │           │ 路由决策                                            │     │   │
+│    │   │           ▼                                                    │     │   │
+│    │   │     ┌─────────────────────────────────────────────────┐        │     │   │
+│    │   │     │              Worker Registry                     │        │     │   │
+│    │   │     │                                                  │        │     │   │
+│    │   │     │  ┌─────────┐  ┌─────────┐  ┌──────────────────┐ │        │     │   │
+│    │   │     │  │ General │  │ Search  │  │    DataTeam      │ │        │     │   │
+│    │   │     │  │ Worker  │  │ Worker  │  │   (Subgraph)     │ │        │     │   │
+│    │   │     │  │         │  │         │  │                  │ │        │     │   │
+│    │   │     │  │ 通用问答 │  │ 联网搜索 │  │ ┌──────────────┐ │ │        │     │   │
+│    │   │     │  │         │  │         │  │ │ SQL Generator│ │ │        │     │   │
+│    │   │     │  │         │  │         │  │ │      ↓       │ │ │        │     │   │
+│    │   │     │  │         │  │         │  │ │ SQL Executor │ │ │        │     │   │
+│    │   │     │  │         │  │         │  │ │      ↓       │ │ │        │     │   │
+│    │   │     │  │         │  │         │  │ │ Data Analyst │ │ │        │     │   │
+│    │   │     │  │         │  │         │  │ └──────────────┘ │ │        │     │   │
+│    │   │     │  └─────────┘  └─────────┘  └──────────────────┘ │        │     │   │
+│    │   │     └─────────────────────────────────────────────────┘        │     │   │
+│    │   └────────────────────────────────────────────────────────────────┘     │   │
+│    └──────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                   │
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                              Tool Layer (工具层)                                  │
+│                                                                                   │
+│    ┌─────────────────────────────────────────────────────────────────────────┐   │
+│    │                          Tool Registry                                   │   │
+│    │                                                                          │   │
+│    │   ┌───────────────┐  ┌───────────────┐  ┌───────────────┐               │   │
+│    │   │ get_datetime  │  │  web_search   │  │  custom_tool  │  ...          │   │
+│    │   └───────────────┘  └───────────────┘  └───────────────┘               │   │
+│    │                                                                          │   │
+│    │   - YAML Schema 定义                                                     │   │
+│    │   - 按 Worker 分配权限                                                    │   │
+│    │   - 同步/异步执行器                                                       │   │
+│    └──────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                   │
+└──────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 3.2 分层职责
+
+| 层级 | 职责 | 核心组件 | 位置 |
+|:---|:---|:---|:---|
+| **Router Layer** | 请求接入、安全防护、可观测性 | Tracing, Auth, RateLimit, Health | `src/router/` |
+| **Performance Layer** | 成本优化、延迟优化 | RuleEngine, SemanticCache | `src/router/agents/performance_layer/` |
+| **Agent Core** | 任务编排、决策路由 | Supervisor, Workers, Workflow | `src/router/agents/supervisor/` |
+| **Tool Layer** | 能力扩展、外部集成 | ToolRegistry, Executors | `src/common/function_calls/` |
 
 ---
 
-## 5. 关键特性详解
+## 4. 完整请求流程
 
-### 5.1 路由治理：追踪、认证、限流
-- **追踪（Tracing）**
-  - 自动生成/透传 TraceID（`X-Trace-ID` / `X-Request-ID`）。
-  - 响应会回传 `X-Trace-ID` 与 `X-Router-Process-Time`。
-- **认证（Auth）**
-  - 目前路由中间件提供“可扩展的 token 校验钩子”。
-  - JWT 授权能力位于 `src/router/services/authorization`（登录/刷新/验证/登出）。
-- **限流（Rate Limit）**
-  - 采用滑动窗口，基于 IP 统计，超限直接返回 429。
-  - 支持跳过路径（健康检查、静态资源等）。
+### 4.1 请求处理时序图
 
-### 5.2 Agent/Supervisor：复杂任务编排
-- **为什么需要 Supervisor/Worker？**
-  - 复杂问题往往需要“分解步骤 + 逐步执行 + 汇总结果”。
-  - 将能力分成 Worker（可复用、可测试），由 Supervisor 调度。
-- **为什么用 LangGraph？**
-  - 把流程显式建模成图/状态机，利于扩展、观测和维护。
+```
+┌──────┐     ┌───────┐     ┌─────────┐     ┌─────────────┐     ┌──────────┐     ┌────────┐
+│Client│     │Tracing│     │  Auth   │     │ Performance │     │Supervisor│     │ Worker │
+└──┬───┘     └───┬───┘     └────┬────┘     │   Layer     │     └────┬─────┘     └───┬────┘
+   │             │              │          └──────┬──────┘          │               │
+   │  POST /chat │              │                 │                 │               │
+   │────────────▶│              │                 │                 │               │
+   │             │              │                 │                 │               │
+   │             │ 生成 TraceID │                 │                 │               │
+   │             │──────────────▶                 │                 │               │
+   │             │              │                 │                 │               │
+   │             │              │ 验证 JWT Token  │                 │               │
+   │             │              │─────────────────▶                 │               │
+   │             │              │                 │                 │               │
+   │             │              │                 │ 1. 规则引擎检查  │               │
+   │             │              │                 │◀────────────────│               │
+   │             │              │                 │                 │               │
+   │             │              │                 │ 2. 语义缓存检查  │               │
+   │             │              │                 │◀────────────────│               │
+   │             │              │                 │                 │               │
+   │             │              │                 │    [未命中]     │               │
+   │             │              │                 │─────────────────▶               │
+   │             │              │                 │                 │               │
+   │             │              │                 │                 │ 3. 任务规划   │
+   │             │              │                 │                 │──────────────▶│
+   │             │              │                 │                 │               │
+   │             │              │                 │                 │ 4. 执行任务   │
+   │             │              │                 │                 │◀──────────────│
+   │             │              │                 │                 │               │
+   │             │              │                 │                 │ 5. 汇报结果   │
+   │             │              │                 │                 │──────────────▶│
+   │             │              │                 │                 │               │
+   │             │              │                 │ 6. 缓存答案     │               │
+   │             │              │                 │◀────────────────│               │
+   │             │              │                 │                 │               │
+   │◀────────────────────────────────────────────────────────────────               │
+   │                      响应 + TraceID + 耗时                                      │
+```
 
-### 5.3 性能层：规则引擎 + 语义缓存
-- **规则引擎**
-  - 对高频固定意图（问候/帮助/清理等）直接命中。
-- **语义缓存**
-  - 使用句向量相似度（阈值默认 0.95）命中“相似问题”。
-  - Redis 与向量模型不可用时自动降级为禁用。
+### 4.2 详细处理步骤
 
-### 5.4 工具体系：function calling Registry
-- 工具定义可由 YAML 配置加载，统一输出 OpenAI function calling 结构。
-- 支持为不同 Worker 指定可用工具集合。
+#### Step 1: 路由治理层
 
-### 5.5 可观测性：日志 + 健康检查 + 指标
-- **日志**：支持控制台彩色输出与文件轮转；可切换结构化 JSON 日志，便于接入 ELK/Loki。
-- **健康检查**：
-  - `/health`：存活探针
-  - `/ready`：就绪探针（Worker/依赖检查）
-  - `/status`：详细状态
-  - `/metrics`：指标
+```python
+# 1.1 Tracing 中间件
+# - 从 X-Trace-ID / X-Request-ID 读取或自动生成 TraceID
+# - 注入日志上下文，便于全链路追踪
+# - 响应时返回 X-Trace-ID 和 X-Router-Process-Time
 
-### 5.6 SSL/HTTPS（可选）
-- 通过 `SSL_ENABLED`、`SERVER_SSL_CERTFILE`、`SERVER_SSL_KEYFILE` 控制。
-- 为避免与系统库冲突，项目刻意**不用** `SSL_CERT_FILE` / `SSL_KEY_FILE`。
+# 1.2 Auth 中间件
+# - 检查 Authorization: Bearer <token>
+# - 验证 JWT 签名和有效期
+# - 将用户信息写入 request.state
+
+# 1.3 RateLimit 中间件
+# - 基于 IP 的滑动窗口计数
+# - 默认 100 请求/分钟
+# - 超限返回 429 Too Many Requests
+```
+
+#### Step 2: 性能优化层
+
+```python
+# 2.1 规则引擎检查（< 1ms）
+rule_result = rule_engine.match(query)
+if rule_result:
+    return {"answer": rule_result["answer"], "source": "rule_engine"}
+
+# 2.2 语义缓存检查（< 10ms）
+# - 将 Query 向量化（sentence-transformers）
+# - 在 Redis 中搜索相似向量
+# - 相似度 > 0.95 则返回缓存答案
+cache_result = semantic_cache.get(query)
+if cache_result:
+    return {"answer": cache_result["answer"], "source": "cache"}
+```
+
+#### Step 3: Supervisor 任务规划
+
+```python
+# 3.1 任务分析
+# Supervisor 分析用户请求，判断复杂度
+
+# 3.2 生成任务计划（Task Plan）
+task_plan = [
+    {"step_id": "step_1", "worker": "Search", "description": "搜索相关信息"},
+    {"step_id": "step_2", "worker": "General", "description": "整理并回答"},
+]
+
+# 3.3 路由决策
+# - 单步简单任务：直接路由到 General
+# - 多步复杂任务：按计划顺序调度
+```
+
+#### Step 4: Worker 执行
+
+```python
+# 4.1 Standard Worker（单步执行）
+class GeneralWorker(BaseWorker):
+    async def run(self, state):
+        # 调用 LLM 处理任务
+        response = await llm.ainvoke(messages)
+        return {"messages": [AIMessage(content=response)]}
+
+# 4.2 Subgraph Worker（子图执行）
+class DataTeamWorker(SubgraphWorker):
+    def build_subgraph(self):
+        # 内部包含 SQL生成 → 执行 → 分析 的完整流程
+        # 支持自动重试（最多 3 次）
+```
+
+#### Step 5: 结果缓存与返回
+
+```python
+# 5.1 缓存答案
+semantic_cache.set(query, final_answer)
+
+# 5.2 返回响应
+# - 非流式：直接返回 JSON
+# - 流式：SSE 实时推送
+```
+
+### 4.3 SSE 流式事件
+
+```
+event: start
+data: {"type": "start"}
+
+event: progress
+data: {"type": "progress", "progress": {"current": 1, "total": 2}}
+
+event: answer
+data: {"type": "answer", "content": "根据搜索结果..."}
+
+event: done
+data: {"type": "done"}
+```
 
 ---
 
-## 6. 快速开始（开发运行）
+## 5. 与其他架构的对比
 
-### 6.1 环境要求
-- Python **>= 3.9**（建议 3.10+）
-- Windows / Linux / macOS 均可
+### 5.1 常见 LLM 应用架构
 
-### 6.2 安装依赖
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              架构演进路线                                        │
+│                                                                                  │
+│   Level 1          Level 2          Level 3          Level 4 (本项目)            │
+│   ────────         ────────         ────────         ──────────────────          │
+│                                                                                  │
+│   直接调用          Chain 链式        ReAct Agent      Supervisor/Worker          │
+│                                                                                  │
+│   User             User             User             User                        │
+│     │                │                │                │                         │
+│     ▼                ▼                ▼                ▼                         │
+│    LLM          Prompt→LLM→       ┌──────┐        ┌──────────┐                  │
+│     │           Parse→Tool        │ LLM  │◀──┐    │Supervisor│                  │
+│     ▼                │            └──┬───┘   │    └────┬─────┘                  │
+│   Output            ▼               │       │         │                         │
+│                  Output          Observe    │    ┌────┴────┐                    │
+│                                     │       │    ▼         ▼                    │
+│                                     ▼       │  Worker   Worker                  │
+│                                   Action────┘    │         │                    │
+│                                                  ▼         ▼                    │
+│                                               Tools     Tools                   │
+│                                                                                  │
+│   优点：简单        优点：可组合      优点：自主决策    优点：                      │
+│   缺点：能力单一    缺点：线性流程    缺点：不可控       - 可控的任务拆解             │
+│                    缺点：无状态                         - 专业化 Worker              │
+│                                                        - 显式状态管理               │
+│                                                        - 支持嵌套子图               │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 5.2 详细对比
+
+| 维度 | 直接调用 | LangChain | ReAct Agent | **本项目架构** |
+|:---|:---|:---|:---|:---|
+| **任务拆解** | ❌ 不支持 | ⚠️ 手动编排 | ⚠️ 隐式（LLM 决定） | ✅ 显式规划（Task Plan） |
+| **流程可控性** | 高 | 高 | 低 | **高（图结构 + 快速路径）** |
+| **成本优化** | ❌ | ❌ | ❌ | ✅ 规则引擎 + 语义缓存 |
+| **错误恢复** | 需手动 | 需手动 | 部分 | ✅ 自动重试 + 降级 |
+| **可观测性** | 差 | 一般 | 一般 | ✅ 节点级追踪 |
+| **扩展性** | 低 | 中 | 中 | ✅ 热插拔 Worker |
+| **嵌套能力** | ❌ | ❌ | ❌ | ✅ Subgraph Worker |
+| **服务治理** | 需自建 | 需自建 | 需自建 | ✅ 内置完整方案 |
+
+### 5.3 本项目的核心优势
+
+#### 1. 三层防御降低成本
+
+```
+请求 ──→ 规则引擎（问候/帮助等）──→ 语义缓存（相似问题）──→ LLM（真正推理）
+           │                          │                      │
+           ▼                          ▼                      ▼
+         < 1ms                      < 10ms               100ms ~ 10s
+         0 Token                    0 Token              正常消耗
+```
+
+#### 2. 显式任务规划
+
+```python
+# ReAct Agent（不可控）
+# LLM 自己决定下一步，可能陷入循环或遗漏步骤
+
+# 本项目（可控）
+task_plan = [
+    {"worker": "Search", "description": "搜索信息"},      # 步骤明确
+    {"worker": "General", "description": "整理回答"},     # 顺序清晰
+]
+# Supervisor 按计划执行，同时保留 LLM 智能路由的灵活性
+```
+
+#### 3. 快速路径优化
+
+```python
+# 传统方式：每次决策都调用 LLM
+# 本项目：多级快速路径
+
+# 快速路径 1：所有步骤完成 → 直接结束
+if completed_steps >= total_steps:
+    return "FINISH"
+
+# 快速路径 2：单步任务已有回复 → 直接结束
+if total_steps == 1 and has_ai_response:
+    return "FINISH"
+
+# 快速路径 3：按计划顺序执行 → 不调用 LLM
+for step in task_plan:
+    if step.status == PENDING:
+        return step.worker
+
+# 只有复杂情况才调用 LLM 决策
+```
+
+#### 4. Subgraph 嵌套能力
+
+```
+                    DataTeam Worker
+                          │
+            ┌─────────────┼─────────────┐
+            │             │             │
+            ▼             ▼             ▼
+      SQL Generator  SQL Executor  Data Analyst
+            │             │             │
+            └──────┬──────┘             │
+                   │ 失败重试            │
+                   └────────────────────┘
+                        自愈闭环
+```
+
+---
+
+## 6. 核心模块详解
+
+### 6.1 Performance Layer（性能层）
+
+#### 规则引擎
+
+```python
+# 内置规则示例
+RULES = [
+    (r"^(你好|hello|hi).*$", "你好！有什么可以帮助你的？", "greeting"),
+    (r"^(帮助|help).*$", "我可以帮助你回答问题...", "help"),
+    (r"^(清除.*历史).*$", "已清除对话历史", "clear_history"),
+]
+
+# 匹配逻辑
+for pattern, answer, rule_type in rules:
+    if re.match(pattern, query, re.IGNORECASE):
+        return {"answer": answer, "source": "rule_engine"}
+```
+
+#### 语义缓存
+
+```python
+# 核心流程
+1. query → sentence-transformers → 向量 (384维)
+2. 在 Redis 中搜索相似向量
+3. 计算余弦相似度
+4. 相似度 > 0.95 → 返回缓存答案
+5. 否则 → 调用 LLM → 缓存结果
+```
+
+### 6.2 Supervisor（监督者）
+
+#### 职责
+
+1. **任务规划**：分析请求，生成 Task Plan
+2. **路由决策**：决定下一步由哪个 Worker 执行
+3. **进度追踪**：监控任务执行状态
+4. **异常处理**：失败时重试或降级
+
+#### 快速路径优化
+
+```python
+# Supervisor 的决策逻辑优先使用快速路径，减少 LLM 调用
+
+async def _route_decision(state):
+    # 快速路径 1：所有步骤完成
+    if completed_steps >= total_steps:
+        return {"next": "FINISH"}
+    
+    # 快速路径 2：单步任务已回复
+    if total_steps == 1 and has_ai_response:
+        return {"next": "FINISH"}
+    
+    # 快速路径 3：按计划顺序执行
+    for step in task_plan:
+        if step.status == PENDING:
+            return {"next": step.worker}
+    
+    # 复杂情况：调用 LLM 决策
+    return await llm_route_decision(state)
+```
+
+### 6.3 Worker（工作者）
+
+#### 类型
+
+| 类型 | 特点 | 示例 |
+|:---|:---|:---|
+| **Standard Worker** | 单步执行，可调用 Tools | General, Search |
+| **Subgraph Worker** | 拥有子工作流，支持自愈 | DataTeam |
+
+#### Worker 生命周期
+
+```
+                    Supervisor
+                        │
+                        │ 分配任务
+                        ▼
+┌───────────────────────────────────────────────────┐
+│                     Worker                         │
+│                                                    │
+│   1. prepare_input()   - 准备输入                  │
+│         │                                          │
+│         ▼                                          │
+│   2. execute()         - 执行任务（调用 LLM/Tools） │
+│         │                                          │
+│         ▼                                          │
+│   3. process_output()  - 处理输出                  │
+│         │                                          │
+│         ▼                                          │
+│   4. 返回结果给 Supervisor                         │
+│                                                    │
+└───────────────────────────────────────────────────┘
+```
+
+### 6.4 Tool Registry（工具注册中心）
+
+#### YAML 驱动
+
+```yaml
+# src/common/function_calls/config.yaml
+
+tools:
+  get_current_time:
+    description: "获取当前日期时间"
+    parameters:
+      type: object
+      properties:
+        timezone:
+          type: string
+          description: "时区"
+      required: []
+
+  web_search:
+    description: "搜索互联网"
+    parameters:
+      type: object
+      properties:
+        query:
+          type: string
+      required: ["query"]
+
+# Worker 权限分配
+worker_tools:
+  General:
+    - get_current_time
+  Search:
+    - web_search
+    - get_current_time
+```
+
+---
+
+## 7. 快速开始
+
+### 7.1 环境要求
+
+- Python >= 3.10
+- (可选) Redis >= 6.0（用于语义缓存）
+
+### 7.2 安装
 
 ```bash
+# 克隆项目
+git clone https://github.com/your-repo/google-ai.git
+cd google-ai
+
+# 创建虚拟环境
 python -m venv .venv
-# Windows PowerShell
+
+# Windows
 .\.venv\Scripts\Activate.ps1
+# Linux/Mac
+source .venv/bin/activate
+
+# 安装依赖
 pip install -r requirements.txt
 ```
 
-### 6.3 配置环境变量
-1. 复制配置示例：
+### 7.3 配置
 
 ```bash
-copy env.example .env
+# 复制配置文件
+cp env.example .env
+
+# 编辑 .env，至少配置一个模型
 ```
 
-2. 至少配置一个模型（示例：Gemini）：
-- `GEMINI_API_KEY=...`
+```ini
+# .env 最小配置
 
-可选：Redis（用于语义缓存）、Tavily（用于搜索工具）。
+# 模型（三选一）
+GEMINI_API_KEY=your_key          # Google Gemini
+# QWEN_API_KEY=your_key          # 通义千问
+# SELF_MODEL_BASE_URL=http://... # 自定义模型
 
-### 6.4 启动服务
+# 安全（生产环境必改）
+JWT_SECRET_KEY=your_secure_random_string
+```
+
+### 7.4 启动
 
 ```bash
 python -m src.main
 ```
 
-启动后默认访问：
-- 本地：`http://127.0.0.1:8080`
-- 文档：debug 模式下可用 `/docs`、`/redoc`
+服务启动后：
+- API 地址：`http://127.0.0.1:8080`
+- 健康检查：`GET /health`
+- API 文档：`GET /docs`（DEBUG 模式）
 
-> `src/main.py` 对 Windows 控制台编码做了兼容处理，减少中文输出乱码问题。
+### 7.5 测试调用
 
----
+```bash
+# 登录获取 Token
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin"}'
 
-## 7. 配置说明（env.example 对照）
-
-### 7.1 服务器
-- `HOST` / `PORT` / `WORKERS` / `DEBUG` / `LOG_LEVEL`
-- `ENABLE_ROUTER`：是否加载路由（可用于“只启动骨架”加速启动）
-- `MAX_UPLOAD_SIZE` / `STATIC_DIR`
-
-### 7.2 模型
-- Gemini：`GEMINI_API_KEY` / `GEMINI_MODEL` / `GEMINI_TIMEOUT` / `GEMINI_MAX_RETRIES`
-- Qwen：`QWEN_API_KEY` / `QWEN_MODEL` / `QWEN_BASE_URL` / `QWEN_TIMEOUT` / `QWEN_MAX_RETRIES`
-- 自定义模型：`SELF_MODEL_BASE_URL` / `SELF_MODEL_NAME` / `SELF_MODEL_API_KEY`
-
-### 7.3 认证
-- `JWT_SECRET_KEY`（生产环境务必设置强随机值）
-- `AUTH_ADMIN_USERNAME` / `AUTH_ADMIN_PASSWORD`
-
-### 7.4 性能层（可选）
-- Redis：`REDIS_HOST` / `REDIS_PORT` / `REDIS_DB` / `REDIS_PASSWORD`
-- `ENABLE_SEMANTIC_CACHE` / `ENABLE_RULE_ENGINE` / `SEMANTIC_CACHE_THRESHOLD`
+# 对话测试
+curl -X POST http://localhost:8080/agents/chat \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"message": "你好"}'
+```
 
 ---
 
-## 8. API 速览
+## 8. 配置详解
 
-### 8.1 健康检查
-- `GET /health`
-- `GET /ready`
-- `GET /status`
-- `GET /metrics`
+### 8.1 服务器配置
 
-### 8.2 授权（JWT）
-- `POST /auth/login`
-- `POST /auth/refresh`
-- `POST /auth/validate`
-- `POST /auth/logout`
-- `GET /auth/me`
+| 变量 | 说明 | 默认值 |
+|:---|:---|:---|
+| `HOST` | 监听地址 | `0.0.0.0` |
+| `PORT` | 监听端口 | `8080` |
+| `WORKERS` | Uvicorn 进程数 | `1` |
+| `DEBUG` | 调试模式 | `false` |
+| `LOG_LEVEL` | 日志级别 | `INFO` |
 
-### 8.3 Agents（Supervisor/Worker）
-- `POST /agents/chat`：非流式
-- `POST /agents/chat/stream`：SSE 流式
-- `GET /agents/chat/history/{thread_id}`：会话历史
-- `GET /agents/workers`：列出 Worker
-- `POST /agents/workers/reset`：重置 Worker/服务
+### 8.2 模型配置
 
----
+| 模型 | 变量 | 说明 |
+|:---|:---|:---|
+| **Gemini** | `GEMINI_API_KEY` | API 密钥 |
+| | `GEMINI_MODEL` | 模型名（默认 `gemini-1.5-flash`） |
+| **Qwen** | `QWEN_API_KEY` | DashScope API 密钥 |
+| | `QWEN_MODEL` | 模型名（默认 `qwen-plus`） |
+| **自定义** | `SELF_MODEL_BASE_URL` | OpenAI 兼容接口地址 |
+| | `SELF_MODEL_NAME` | 模型名 |
 
-## 9. 生产化建议（实践经验）
+### 8.3 性能层配置
 
-### 9.1 安全
-- **务必设置** `JWT_SECRET_KEY`，并使用强随机值。
-- 生产环境建议将 Token 黑名单从内存迁移到 Redis（避免多实例不一致）。
-- 在反向代理后部署时，建议正确配置/信任 `X-Forwarded-For`，并限制来源。
+| 变量 | 说明 | 默认值 |
+|:---|:---|:---|
+| `ENABLE_RULE_ENGINE` | 启用规则引擎 | `true` |
+| `ENABLE_SEMANTIC_CACHE` | 启用语义缓存 | `true` |
+| `SEMANTIC_CACHE_THRESHOLD` | 缓存相似度阈值 | `0.95` |
+| `REDIS_HOST` | Redis 地址 | `localhost` |
+| `REDIS_PORT` | Redis 端口 | `6379` |
 
-### 9.2 稳定性与成本
-- 优先启用规则引擎与语义缓存，降低重复调用成本。
-- 对外部模型 API 调用设置超时与重试（项目中已为模型配置提供相关字段）。
+### 8.4 安全配置
 
-### 9.3 可观测性
-- 建议开启结构化日志（JSON）接入日志平台。
-- 保留 TraceID，便于排查某一次请求的端到端链路。
-
----
-
-## 10. 选型总结（为什么这样组合）
-
-- **FastAPI + Uvicorn**：兼顾性能、工程化与开发效率，是 Python 服务化 LLM 能力的“最短路径”。
-- **LangGraph**：把复杂任务显式化为可维护的工作流图，天然适合多 Worker 调度。
-- **Redis + sentence-transformers**：用简单可部署的组件实现“相似问题直接返回”，立竿见影降低成本。
-- **JWT + 中间件治理**：让服务具备生产必需的认证、限流、防刷与追踪能力。
+| 变量 | 说明 | 默认值 |
+|:---|:---|:---|
+| `JWT_SECRET_KEY` | JWT 签名密钥 | `secret`（必改） |
+| `JWT_ALGORITHM` | 签名算法 | `HS256` |
+| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Access Token 有效期 | `30` |
+| `AUTH_ADMIN_USERNAME` | 管理员用户名 | `admin` |
+| `AUTH_ADMIN_PASSWORD` | 管理员密码 | `admin`（必改） |
 
 ---
 
-## 11. 进一步阅读
-- `src/README.md`：源码总览
-- `src/router/README.md`：路由体系
-- `src/router/agents/README.md`：Agent/Supervisor 架构
-- `src/router/agents/performance_layer/README.md`：性能层
-- `src/common/function_calls/README.md`：工具注册与调用
+## 9. 开发指南
+
+### 9.1 添加新 Worker
+
+```python
+# src/router/agents/workerAgents/my_worker.py
+
+from src.router.agents.supervisor.registry import BaseWorker
+
+class MyWorker(BaseWorker):
+    def __init__(self):
+        super().__init__(
+            name="MyWorker",
+            description="我的自定义 Worker，擅长处理 XXX 任务",
+            priority=10,
+        )
+    
+    async def run(self, state):
+        # 1. 获取当前任务
+        task = self.get_current_task_step(state)
+        
+        # 2. 处理任务
+        result = await self._process(state)
+        
+        # 3. 返回结果
+        return {
+            "messages": [AIMessage(content=result, name=self.name)],
+        }
+```
+
+### 9.2 添加新工具
+
+```yaml
+# src/common/function_calls/config.yaml
+
+tools:
+  my_tool:
+    description: "工具描述"
+    parameters:
+      type: object
+      properties:
+        param1:
+          type: string
+          description: "参数说明"
+      required: ["param1"]
+```
+
+```python
+# src/tools/my_tool.py
+
+def invoke(param1: str) -> str:
+    return f"结果: {param1}"
+
+async def ainvoke(param1: str) -> str:
+    return invoke(param1)
+```
+
+### 9.3 自定义规则
+
+```python
+# 在 PerformanceLayer 初始化后添加
+
+performance_layer.rule_engine.add_rule(
+    pattern=r"^查询.*订单.*$",
+    answer="请提供订单号，我来帮您查询。",
+    rule_type="order_query",
+)
+```
+
+---
+
+## 10. 生产环境建议
+
+### 10.1 安全加固
+
+```bash
+# 1. 生成安全的 JWT 密钥
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# 2. 修改默认密码
+AUTH_ADMIN_PASSWORD=<strong_password>
+
+# 3. 启用 HTTPS
+SSL_ENABLED=true
+SERVER_SSL_CERTFILE=/path/to/cert.pem
+SERVER_SSL_KEYFILE=/path/to/key.pem
+```
+
+### 10.2 性能优化
+
+```bash
+# 1. 启用语义缓存（需要 Redis）
+ENABLE_SEMANTIC_CACHE=true
+REDIS_HOST=your-redis-host
+
+# 2. 调整缓存阈值（0.9~0.98）
+SEMANTIC_CACHE_THRESHOLD=0.95
+
+# 3. 多进程部署
+WORKERS=4
+```
+
+### 10.3 可观测性
+
+```bash
+# 1. 启用结构化日志
+LOG_FORMAT=json
+
+# 2. 接入监控
+# - /health 用于存活探针
+# - /ready 用于就绪探针
+# - /metrics 用于 Prometheus 抓取
+
+# 3. 保留 TraceID
+# 所有日志自动关联 TraceID，便于链路追踪
+```
+
+### 10.4 部署架构建议
+
+```
+                    ┌─────────────┐
+                    │   Nginx     │
+                    │  (SSL/LB)   │
+                    └──────┬──────┘
+                           │
+           ┌───────────────┼───────────────┐
+           │               │               │
+    ┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐
+    │  Instance 1 │ │  Instance 2 │ │  Instance 3 │
+    │   (8080)    │ │   (8081)    │ │   (8082)    │
+    └──────┬──────┘ └──────┬──────┘ └──────┬──────┘
+           │               │               │
+           └───────────────┼───────────────┘
+                           │
+                    ┌──────▼──────┐
+                    │    Redis    │
+                    │  (缓存/限流) │
+                    └─────────────┘
+```
+
+---
+
+## 11. 目录结构
+
+```
+src/
+├── main.py                 # 启动入口
+├── config.py               # 应用配置
+│
+├── server/                 # FastAPI 应用组装
+│   ├── app.py              # 创建 FastAPI 实例
+│   ├── server.py           # Uvicorn 启动封装
+│   └── ...
+│
+├── router/                 # 路由系统
+│   ├── index.py            # 路由初始化入口
+│   ├── health.py           # 健康检查端点
+│   │
+│   ├── agents/             # Agent 核心
+│   │   ├── api.py          # Agent API
+│   │   ├── supervisor/     # Supervisor 实现
+│   │   ├── performance_layer/  # 性能优化层
+│   │   ├── workerAgents/   # Worker 实现
+│   │   └── AI/             # 模型适配层
+│   │
+│   ├── services/           # 业务服务
+│   │   └── authorization/  # JWT 授权
+│   │
+│   └── utils/              # 路由工具
+│       └── middlewares/    # 中间件
+│
+├── core/                   # 核心基础设施
+│   ├── settings.py         # 配置中心
+│   └── dependencies.py     # 依赖注入
+│
+├── common/                 # 通用能力
+│   ├── prompts/            # 提示词管理
+│   └── function_calls/     # 工具注册
+│
+└── tools/                  # 工具实现
+    ├── datetime_tool.py
+    └── search.py
+```
+
+---
+
+## 12. 进一步阅读
+
+| 模块 | 文档 |
+|:---|:---|
+| 源码总览 | [src/README.md](src/README.md) |
+| 路由系统 | [src/router/README.md](src/router/README.md) |
+| Agent 架构 | [src/router/agents/README.md](src/router/agents/README.md) |
+| Supervisor | [src/router/agents/supervisor/README.md](src/router/agents/supervisor/README.md) |
+| 性能层 | [src/router/agents/performance_layer/README.md](src/router/agents/performance_layer/README.md) |
+| 工具注册 | [src/common/function_calls/README.md](src/common/function_calls/README.md) |
+| 授权服务 | [src/router/services/authorization/README.md](src/router/services/authorization/README.md) |
+
+---
+
+## License
+
+MIT License

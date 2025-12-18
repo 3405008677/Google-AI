@@ -1,0 +1,10 @@
+# Development Dependencies
+# Install with: pip install -r requirements-dev.txt
+
+# Code Formatting
+black==25.1.0
+
+# Script Dependencies (Optional)
+# opencc-python-reimplemented==0.1.7  # Only needed for scripts/convert_zh_tw_to_cn.py
+# olefile  # Only needed for scripts/extract_doc_ole_text.py
+
