@@ -261,12 +261,18 @@ class SupervisorService:
         inputs = self._build_initial_state(user_message, user_context, initial_state)
         config = self._build_config(thread_id)
         
-        logger.info(f"开始运行 Supervisor (thread: {thread_id})")
+        logger.info(f"🚀 [Supervisor] 开始运行 (thread: {thread_id})")
+        logger.info(f"   └─ 用户消息: {user_message[:100]}{'...' if len(user_message) > 100 else ''}")
         
         final_state = None
         try:
             async for event in self.graph_app.astream(inputs, config=config):
                 for node_name, node_output in event.items():
+                    # 显示每个节点的执行
+                    if node_name == "supervisor":
+                        logger.info(f"📊 [节点执行] Supervisor 节点执行完成")
+                    elif node_name != "__end__":
+                        logger.info(f"📊 [节点执行] {node_name} 节点执行完成")
                     final_state = node_output
         except Exception as e:
             logger.error(f"运行 Supervisor 时出错: {e}", exc_info=True)
@@ -283,7 +289,7 @@ class SupervisorService:
                 answer = last_message.content if hasattr(last_message, 'content') else str(last_message)
                 self.performance_layer.cache_answer(user_message, answer)
         
-        logger.info(f"Supervisor 运行完成 (thread: {thread_id})")
+        logger.info(f"✅ [Supervisor] 运行完成 (thread: {thread_id})")
         return final_state or {}
     
     async def run_stream(
@@ -332,7 +338,8 @@ class SupervisorService:
         inputs = self._build_initial_state(user_message, user_context, initial_state)
         config = self._build_config(thread_id)
         
-        logger.info(f"开始流式运行 Supervisor (thread: {thread_id})")
+        logger.info(f"🚀 [Supervisor] 开始流式运行 (thread: {thread_id})")
+        logger.info(f"   └─ 用户消息: {user_message[:100]}{'...' if len(user_message) > 100 else ''}")
         
         prev_state = inputs
         final_answer = ""
@@ -344,6 +351,12 @@ class SupervisorService:
                 stream_mode="updates"
             ):
                 for node_name, node_output in event.items():
+                    # 显示每个节点的执行
+                    if node_name == "supervisor":
+                        logger.info(f"📊 [节点执行] Supervisor 节点执行完成")
+                    elif node_name != "__end__":
+                        logger.info(f"📊 [节点执行] {node_name} 节点执行完成")
+                    
                     # 解析节点输出为事件
                     stream_events = self._parse_node_output(node_name, node_output, prev_state)
                     

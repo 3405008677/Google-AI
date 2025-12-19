@@ -94,6 +94,8 @@ class SupervisorConfig:
 
 def _build_planning_prompt(worker_list: str, max_steps: int) -> ChatPromptTemplate:
     """构建任务规划 Prompt（从配置文件读取）"""
+    import re
+    
     # 从配置文件获取提示词，支持模板变量
     system_prompt = get_prompt(
         "supervisor.planning.system",
@@ -101,17 +103,61 @@ def _build_planning_prompt(worker_list: str, max_steps: int) -> ChatPromptTempla
         max_steps=max_steps,
     )
     
+    # 转义 system_prompt 中的 JSON 示例大括号（因为 format_map 会将 {{ 转换为单个 {）
+    # 匹配单个 {（前面不是 {，后面也不是 {）
+    system_prompt = re.sub(r'(?<!\{)\{(?!\{)', '{{', system_prompt)
+    # 匹配单个 }（前面不是 }，后面也不是 }）
+    system_prompt = re.sub(r'(?<!\})\}(?!\})', '}}', system_prompt)
+    
     # 获取规划完成提示词
     planning_complete = get_prompt(
         "supervisor.planning.output.complete",
         default='请分析用户的请求，制定一个执行计划。返回 JSON 格式：{{"steps": [{{"worker": "专家名称", "description": "任务描述"}}], "reasoning": "规划理由"}}'
     )
     
-    return ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        MessagesPlaceholder(variable_name="messages"),
-        ("system", planning_complete),
-    ])
+    # 转义 planning_complete 中的大括号，防止被 LangChain 的 ChatPromptTemplate 识别为模板变量
+    # 问题：planning_complete 中可能包含 JSON 示例（如 {"steps": [...]}），LangChain 会尝试解析 {steps} 作为模板变量
+    # 解决方案：转义所有单个的大括号为双大括号，但跳过已经是双大括号的部分
+    # 使用负向前瞻和负向后顾来避免重复转义
+    # 记录转义前的内容（用于调试）
+    if '"steps"' in planning_complete:
+        logger.debug(f"planning_complete 转义前（前300字符）: {planning_complete[:300]}")
+    
+    # 匹配单个 {（前面不是 {，后面也不是 {）
+    planning_complete_before = planning_complete
+    planning_complete = re.sub(r'(?<!\{)\{(?!\{)', '{{', planning_complete)
+    # 匹配单个 }（前面不是 }，后面也不是 }）
+    planning_complete = re.sub(r'(?<!\})\}(?!\})', '}}', planning_complete)
+    
+    # 调试：记录转义后的内容（仅包含前300字符）
+    if '"steps"' in planning_complete and planning_complete != planning_complete_before:
+        logger.debug(f"planning_complete 转义后（前300字符）: {planning_complete[:300]}")
+    
+    try:
+        return ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            MessagesPlaceholder(variable_name="messages"),
+            ("system", planning_complete),
+        ])
+    except Exception as e:
+        # 如果创建 ChatPromptTemplate 失败，记录详细信息
+        logger.error(f"创建 ChatPromptTemplate 失败: {e}")
+        # 计算大括号数量（避免在 f-string 中使用复杂的大括号转义）
+        single_brace_count_sys = system_prompt.count('{') - system_prompt.count('{{') * 2
+        double_brace_count_sys = system_prompt.count('{{')
+        single_brace_count_plan = planning_complete.count('{') - planning_complete.count('{{') * 2
+        double_brace_count_plan = planning_complete.count('{{')
+        # 使用字符串格式化而不是 f-string，避免大括号转义问题
+        logger.error("system_prompt 长度: %d, 包含单个大括号: %d, 包含双大括号: %d", 
+                    len(system_prompt), single_brace_count_sys, double_brace_count_sys)
+        logger.error("planning_complete 长度: %d, 包含单个大括号: %d, 包含双大括号: %d", 
+                    len(planning_complete), single_brace_count_plan, double_brace_count_plan)
+        if '"steps"' in planning_complete:
+            # 查找 "steps" 附近的内容
+            steps_pos = planning_complete.find('"steps"')
+            logger.error("planning_complete 中 'steps' 附近的内容: %s", 
+                        planning_complete[max(0, steps_pos-50):steps_pos+100])
+        raise
 
 
 def _build_routing_prompt(
@@ -474,7 +520,7 @@ def create_supervisor_node(
                     content=reasoning or f"决定交给 {next_action} 处理",
                 )
                 
-                logger.info(f"🎯 [Supervisor] 决策: {next_action}" + (f" (理由: {reasoning})" if reasoning else ""))
+                logger.info(f"🎯 [Supervisor] 决策结果: {next_action}" + (f" | 理由: {reasoning}" if reasoning else ""))
                 
                 if result.should_replan:
                     logger.info("🔄 [Supervisor] 请求重新规划任务")
@@ -518,6 +564,9 @@ def create_supervisor_node(
             
             # 动态获取当前注册的 Worker
             registry = get_registry()
+            worker_names = list(registry.get_all().keys())
+            logger.info(f"   └─ 当前可用 Workers: {', '.join(worker_names)}")
+            
             if registry.is_empty():
                 logger.warning("没有注册任何 Worker，默认返回 FINISH")
                 return {"next": "FINISH", "iteration_count": iteration_count + 1}
@@ -531,6 +580,13 @@ def create_supervisor_node(
             
             # 阶段 2：路由决策
             routing_result = await _route_decision(state, registry)
+            
+            # 显示路由结果
+            next_action = routing_result.get("next", "FINISH")
+            if next_action != "FINISH":
+                logger.info(f"   └─ 路由到: {next_action}")
+            else:
+                logger.info(f"   └─ 任务完成 (FINISH)")
             
             return {
                 # 先写入 planning_result，让 task_plan/current_step_index 等字段进入图状态；

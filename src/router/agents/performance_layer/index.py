@@ -319,42 +319,58 @@ class RuleEngine:
             loaded_count = 0
             
             for group in rule_groups:
-                rules_config = prompt_manager.get_section(f"rules.{group}")
+                # 使用 _get_raw 方法获取原始值，因为 get_section 只返回字典
+                # 我们需要直接访问 rules.default 或 rules.business，它们可能是列表
+                keys = f"rules.{group}".split(".")
+                value = prompt_manager._cache
+                
+                # 遍历路径获取值
+                for k in keys:
+                    if isinstance(value, dict):
+                        value = value.get(k)
+                        if value is None:
+                            value = []
+                            break
+                    else:
+                        value = []
+                        break
+                
+                # value 现在可能是列表或字典
+                rules_config = value if isinstance(value, list) else []
                 
                 if not rules_config:
+                    logger.debug(f"规则引擎：未找到规则组 '{group}' 或为空")
                     continue
                 
                 # rules_config 是一个列表
-                if isinstance(rules_config, list):
-                    for rule in rules_config:
-                        if isinstance(rule, dict):
-                            pattern = rule.get("pattern", "")
-                            answer = rule.get("answer", "")
-                            rule_type = rule.get("type", "custom")
-                            
-                            if pattern and answer:
-                                self.add_rule(pattern, answer.strip(), rule_type)
-                                loaded_count += 1
+                for rule in rules_config:
+                    if isinstance(rule, dict):
+                        pattern = rule.get("pattern", "")
+                        answer = rule.get("answer", "")
+                        rule_type = rule.get("type", "custom")
+                        
+                        if pattern and answer:
+                            # 确保多行字符串被正确保留（strip() 只去除首尾空白，保留中间换行符）
+                            processed_answer = answer.strip()
+                            # 调试：对于 identity 类型规则，记录答案长度和换行符数量
+                            if rule_type == "identity":
+                                newline_count = processed_answer.count("\n")
+                                logger.debug(
+                                    f"规则引擎：加载 identity 规则 | "
+                                    f"答案长度: {len(processed_answer)} | "
+                                    f"换行符数量: {newline_count} | "
+                                    f"前50字符: {repr(processed_answer[:50])}"
+                                )
+                            self.add_rule(pattern, processed_answer, rule_type)
+                            loaded_count += 1
             
             if loaded_count > 0:
                 logger.info(f"规则引擎：从 YAML 加载了 {loaded_count} 条规则")
             else:
-                logger.warning("规则引擎：未从 YAML 加载到任何规则，使用内置默认规则")
-                self._load_fallback_rules()
+                logger.warning("规则引擎：未从 YAML 加载到任何规则，请检查 rules.yaml 配置文件")
                 
         except Exception as e:
-            logger.warning(f"规则引擎：加载 YAML 规则失败，使用内置默认规则: {e}")
-            self._load_fallback_rules()
-    
-    def _load_fallback_rules(self):
-        """加载内置默认规则（作为降级方案）"""
-        fallback_rules = [
-            (r"^(你好|hello|hi|您好)[\\s!！。，,]*$", "你好！有什么可以帮助您的？", "greeting"),
-            (r"^(你是谁|你叫什么)[\\s!！。，,?？]*$", "我是 GG后台系统助手。", "identity"),
-            (r"^(谢谢|感谢|thanks)[\\s!！。，,]*$", "不客气！", "thanks"),
-        ]
-        for pattern, answer, rule_type in fallback_rules:
-            self.add_rule(pattern, answer, rule_type)
+            logger.error(f"规则引擎：加载 YAML 规则失败: {e}，请检查 rules.yaml 配置文件")
 
     def add_rule(self, pattern: str, answer: str, rule_type: str = "custom"):
         """
@@ -388,7 +404,14 @@ class RuleEngine:
             try:
                 # 使用正则匹配
                 if re.search(pattern, cleaned_query, re.IGNORECASE):
-                    logger.info(f"规则引擎命中 | 类型: {rule_type} | 查询: {query[:50]}...")
+                    # 调试：记录答案的详细信息
+                    newline_count = answer.count("\n")
+                    logger.info(
+                        f"规则引擎命中 | 类型: {rule_type} | 查询: {query[:50]}... | "
+                        f"答案长度: {len(answer)} | 换行符数量: {newline_count}"
+                    )
+                    if newline_count > 0:
+                        logger.debug(f"规则引擎答案内容（前100字符）: {repr(answer[:100])}")
                     return {
                         "answer": answer,
                         "rule_type": rule_type,

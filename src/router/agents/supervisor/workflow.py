@@ -42,8 +42,15 @@ def build_worker_node(worker_name: str) -> Callable[[SupervisorState], Dict[str,
             }
         
         try:
-            logger.debug(f"开始执行 Worker: {worker_name}")
+            # 显示调用的 Worker 信息
+            worker_desc = worker.description if hasattr(worker, 'description') else "未知"
+            logger.info(f"🤖 [Agent调用] 正在调用 Worker: {worker_name} | 描述: {worker_desc}")
+            logger.info(f"   └─ Worker类型: {worker.worker_type.value if hasattr(worker, 'worker_type') else '未知'}")
+            
             updated_state = await worker.execute(state)
+            
+            # 显示 Worker 执行完成
+            logger.info(f"✅ [Agent完成] Worker '{worker_name}' 执行完成")
             return updated_state
         except Exception as e:
             logger.error(f"Worker '{worker_name}' 执行时出错: {e}", exc_info=True)
