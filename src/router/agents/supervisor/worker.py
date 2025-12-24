@@ -34,6 +34,9 @@ from src.common.function_calls import get_tools_for_langchain, get_tool_executor
 # 工具导入
 from src.tools import get_tavily_search, is_tavily_configured, get_datetime_tool
 
+# Function Call 降级方案
+from src.router.agents.supervisor.function_call import get_fallback_manager
+
 
 class BaseWorker(Worker, BaseWorkerMixin):
     """
@@ -342,12 +345,6 @@ class GeneralWorker(BaseWorker):
             logger.warning(f"[{self.name}] 获取工具定义失败: {e}")
             return []
     
-    def _get_current_datetime_info(self, timezone: str = "Asia/Shanghai") -> str:
-        """直接获取当前时间信息（降级方案）"""
-        tool = get_datetime_tool(timezone)
-        response = tool.get_datetime(timezone)
-        return f"今天是 {response.date} {response.weekday}，现在时间是 {response.time}（{response.timezone}）"
-    
     async def _execute_tool(self, tool_name: str, tool_args: Dict[str, Any]) -> str:
         """执行工具调用"""
         executor = self.TOOL_EXECUTORS.get(tool_name)
@@ -428,13 +425,33 @@ class GeneralWorker(BaseWorker):
         language: str,
         timezone: str,
     ) -> str:
-        """不使用 Function Calling 执行（降级方案）"""
-        logger.info(f"[{self.name}] 使用降级方案（直接注入时间信息）")
+        """
+        不使用 Function Calling 执行（降级方案）
         
-        datetime_info = self._get_current_datetime_info(timezone)
-        system_prompt = get_prompt(
-            "workers.general.system_with_datetime",
-            datetime_info=datetime_info,
+        根据需要的工具类型，收集相应的降级信息并注入到系统提示词中。
+        当前支持：datetime（时间信息）
+        未来可扩展：search（搜索能力）、data_query（数据查询）等
+        """
+        logger.info(f"[{self.name}] 使用降级方案（直接注入实时信息）")
+        
+        # 获取降级方案管理器
+        fallback_manager = get_fallback_manager()
+        
+        # 确定需要的降级方案（根据工具列表）
+        # 当前 General Worker 只需要时间信息
+        required_fallbacks = ["datetime"]
+        
+        # 收集降级信息
+        fallback_info = fallback_manager.collect_fallback_info(
+            required_fallbacks,
+            timezone=timezone,
+        )
+        
+        # 构建系统提示词
+        system_prompt = fallback_manager.build_system_prompt_with_fallbacks(
+            base_prompt_key="workers.general.system",
+            fallback_names=required_fallbacks,
+            fallback_info=fallback_info,
             language=language,
         )
         

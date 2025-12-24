@@ -75,7 +75,6 @@ def create_app(config_overrides: Optional[dict] = None) -> FastAPI:
     # 初始化路由（默认关闭以加快启动，可通过 ENABLE_ROUTER 控制）
     if config_dict.get("enable_router", False):
         from src.router.index import initRouter  # 延迟导入，避免不必要的依赖
-
         initRouter(app)
     else:
         logger.info("路由未加载（ENABLE_ROUTER=false），启动更快")
